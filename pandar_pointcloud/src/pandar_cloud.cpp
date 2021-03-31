@@ -19,6 +19,7 @@ namespace pandar_pointcloud
 PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
 {
   private_nh.getParam("scan_phase", scan_phase_);
+  private_nh.getParam("return_mode", return_mode_);
   private_nh.getParam("calibration", calibration_path_);
   private_nh.getParam("model", model_);
   private_nh.getParam("device_ip", device_ip_);
@@ -30,8 +31,19 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
   }
 
   if (model_ == "Pandar40P" || model_ == "Pandar40M") {
+    pandar40::Pandar40Decoder::ReturnMode selected_return_mode;
+    if (return_mode_ == "Strongest")
+      selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::STRONGEST;
+    else if (return_mode_ == "Last")
+      selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::LAST;
+    else if (return_mode_ == "Dual")
+      selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::DUAL;
+    else {
+      ROS_ERROR("Invalid return mode, defaulting to strongest return mode"); 
+      selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::STRONGEST;
+    }
     decoder_ = std::make_shared<pandar40::Pandar40Decoder>(calibration_, scan_phase_,
-                                                           pandar40::Pandar40Decoder::ReturnMode::DUAL);
+                                                           selected_return_mode);
   }
   else if (model_ == "PandarQT") {
     decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(calibration_, scan_phase_);
@@ -90,7 +102,13 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
       pointcloud = decoder_->getPointcloud();
       if (pointcloud->points.size() > 0) {
         pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
-        pointcloud->header.frame_id = scan_msg->header.frame_id;
+        //pointcloud->header.frame_id = scan_msg->header.frame_id;
+        if(pointcloud->header.frame_id.empty())
+          pointcloud->header.frame_id = "pandar";          
+        else
+          pointcloud->header.frame_id = scan_msg->header.frame_id;
+
+          
         pointcloud->height = 1;
 
         pandar_points_ex_pub_.publish(pointcloud);

@@ -18,6 +18,17 @@ public:
     STRONGEST,
     LAST,
   };
+  enum ReturnType : int8_t
+  {
+    INVALID = -1,
+    SINGLE_STRONGEST,
+    SINGLE_LAST,
+    DUAL_STRONGEST_FIRST,
+    DUAL_STRONGEST_LAST,
+    DUAL_WEAK_FIRST,
+    DUAL_WEAK_LAST,
+    DUAL_ONLY,
+  };
 
   Pandar40Decoder(Calibration& calibration, float scan_phase = 0.0f, ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
@@ -26,6 +37,7 @@ public:
 
 private:
   bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
+  PointXYZIRADT build_point(int block_id, int unit_id, int8_t return_type);
   PointcloudXYZIRADT convert(const int block_id);
   PointcloudXYZIRADT convert_dual(const int block_id);
 

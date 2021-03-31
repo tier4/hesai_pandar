@@ -6,6 +6,7 @@
   <arg name="lidar_port"  default="2368"/>
   <arg name="gps_port"  default="10110"/>
   <arg name="scan_phase"  default="0"/>
+  <arg name="return_mode" default="Dual"/>
   <arg name="model" default="Pandar40P"/>
   <arg name="frame_id" default="pandar"/>
   <arg name="calibration"  default="$(find pandar_pointcloud)/config/40p.csv"/>
@@ -32,6 +33,7 @@
     <remap from="pandar_points" to="pointcloud_raw" />
     <remap from="pandar_points_ex" to="pointcloud_raw_ex" />
     <param name="scan_phase" type="double" value="$(arg scan_phase)"/>
+    <param name="return_mode"  type="string" value="$(arg return_mode)"/>
     <param name="model" type="string" value="$(arg model)"/>
     <param name="device_ip" type="string" value="$(arg device_ip)"/>
     <param name="calibration" type="string" value="$(arg calibration)"/>

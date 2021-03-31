@@ -23,6 +23,7 @@ private:
   pcl::PointCloud<PointXYZIR>::Ptr convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
 
   std::string model_;
+  std::string return_mode_;
   std::string device_ip_;
   std::string calibration_path_;
   double scan_phase_;
