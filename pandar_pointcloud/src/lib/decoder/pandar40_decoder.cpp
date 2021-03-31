@@ -125,7 +125,7 @@ PointcloudXYZIRADT Pandar40Decoder::convert(int block_id)
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
   for (auto unit_id : firing_order_) {
-    block_pc->push_back(build_point(block_id, unit_id, ReturnType::SINGLE_STRONGEST)); 
+    block_pc->push_back(build_point(block_id, unit_id, (packet_.return_mode == STRONGEST_RETURN) ? ReturnType::SINGLE_STRONGEST : ReturnType::SINGLE_LAST)); 
   }
   return block_pc;
 }
