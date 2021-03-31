@@ -46,7 +46,19 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
                                                            selected_return_mode);
   }
   else if (model_ == "PandarQT") {
-    decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(calibration_, scan_phase_);
+    pandar_qt::PandarQTDecoder::ReturnMode selected_return_mode;
+    if (return_mode_ == "First")
+      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::FIRST;
+    else if (return_mode_ == "Last")
+      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::LAST;
+    else if (return_mode_ == "Dual")
+      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
+    else {
+      ROS_ERROR("Invalid return mode, defaulting to dual return mode"); 
+      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
+    }
+    decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(calibration_, scan_phase_,
+                                                            selected_return_mode);
   }
   else {
     // TODO : Add other models
@@ -102,13 +114,7 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
       pointcloud = decoder_->getPointcloud();
       if (pointcloud->points.size() > 0) {
         pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
-        //pointcloud->header.frame_id = scan_msg->header.frame_id;
-        if(pointcloud->header.frame_id.empty())
-          pointcloud->header.frame_id = "pandar";          
-        else
-          pointcloud->header.frame_id = scan_msg->header.frame_id;
-
-          
+        pointcloud->header.frame_id = scan_msg->header.frame_id;
         pointcloud->height = 1;
 
         pandar_points_ex_pub_.publish(pointcloud);

@@ -18,9 +18,19 @@ public:
     FIRST,
     LAST,
   };
+  enum ReturnType : int8_t
+  {
+    INVALID = -1,
+    SINGLE_FIRST,
+    SINGLE_LAST,
+    DUAL_FIRST,
+    DUAL_LAST,
+    DUAL_ONLY,
+  };
 
   PandarQTDecoder(Calibration& calibration, float scan_phase = 0.0f, ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
+  PointXYZIRADT build_point(int block_id, int unit_id, int8_t return_type);
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
 
