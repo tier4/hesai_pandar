@@ -134,7 +134,7 @@ PointcloudXYZIRADT Pandar40Decoder::convert_dual(int block_id)
 {
   //   Under the Dual Return mode, the measurements from each round of firing are stored in two adjacent blocks:
   // · The even number block is the last return, and the odd number block is the strongest return
-  // · If the last and strongest returns coincide, the second strongest return will be placed in the odd number block  // · 
+  // · If the last and strongest returns coincide, the second strongest return will be placed in the odd number block
   // · The Azimuth changes every two blocks
   // · Important note: Hesai datasheet block numbering starts from 0, not 1, so odd/even are reversed here
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
@@ -166,7 +166,7 @@ PointcloudXYZIRADT Pandar40Decoder::convert_dual(int block_id)
       block_pc->push_back(build_point(even_block_id, unit_id, ReturnType::SINGLE_LAST)); 
     }
     else if (return_mode_ == ReturnMode::DUAL) {
-      //
+      // Only one return when returns are equal
       if (even_unit.distance == odd_unit.distance && even_usable) {
         block_pc->push_back(build_point(even_block_id, unit_id, ReturnType::DUAL_ONLY));
       }
