@@ -124,36 +124,8 @@ PointcloudXYZIRADT Pandar40Decoder::convert(int block_id)
 {
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
-  // double unix_second = raw_packet.header.stamp.toSec() // system-time (packet receive time)
-  double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
-
   for (auto unit_id : firing_order_) {
-    PointXYZIRADT point;
-    const auto& block = packet_.blocks[block_id];
-    const auto& unit = block.units[unit_id];
-    // skip invalid points
-    if (unit.distance <= 0.1 || unit.distance > 200.0) {
-      continue;
-    }
-    double xyDistance = unit.distance * cosf(deg2rad(elev_angle_[unit_id]));
-
-    point.x = static_cast<float>(
-        xyDistance * sinf(deg2rad(azimuth_offset_[unit_id] + (static_cast<double>(block.azimuth)) / 100.0)));
-    point.y = static_cast<float>(
-        xyDistance * cosf(deg2rad(azimuth_offset_[unit_id] + (static_cast<double>(block.azimuth)) / 100.0)));
-    point.z = static_cast<float>(unit.distance * sinf(deg2rad(elev_angle_[unit_id])));
-
-    point.intensity = unit.intensity;
-    point.distance = unit.distance;
-    point.ring = unit_id;
-    point.azimuth = block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
-
-    point.time_stamp = unix_second + (static_cast<double>(packet_.usec)) / 1000000.0;
-    point.time_stamp -= (static_cast<double>(block_offset_single_[block_id] + firing_offset_[unit_id]) / 1000000.0f);
-
-    point.return_type = ((packet_.return_mode == STRONGEST_RETURN) ? ReturnType::SINGLE_STRONGEST : ReturnType::SINGLE_LAST);
-
-    block_pc->push_back(point);
+    block_pc->push_back(build_point(block_id, unit_id, ReturnType::SINGLE_STRONGEST)); 
   }
   return block_pc;
 }
