@@ -99,6 +99,7 @@ PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, int8_t ret
   const auto& block = packet_.blocks[block_id];
   const auto& unit = block.units[unit_id];
   double unix_second = static_cast<double>(timegm(&packet_.t));
+  bool dual_return = (packet_.return_mode == DUAL_RETURN);
   PointXYZIRADT point;
 
   double xyDistance = unit.distance * cosf(deg2rad(elev_angle_[unit_id]));
@@ -115,7 +116,8 @@ PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, int8_t ret
   point.azimuth = block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
   point.return_type = return_type;
   point.time_stamp = unix_second + (static_cast<double>(packet_.usec)) / 1000000.0;
-  point.time_stamp -= (static_cast<double>(block_offset_dual_[block_id] + firing_offset_[unit_id]) / 1000000.0f);
+  point.time_stamp += dual_return ? (static_cast<double>(block_offset_dual_[block_id] + firing_offset_[unit_id]) / 1000000.0f) :
+                                    (static_cast<double>(block_offset_single_[block_id] + firing_offset_[unit_id]) / 1000000.0f); 
 
   return point;
 }
