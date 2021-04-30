@@ -20,7 +20,7 @@ public:
   };
   enum ReturnType : int8_t
   {
-    INVALID = -1,
+    INVALID = 0,
     SINGLE_STRONGEST,
     SINGLE_LAST,
     DUAL_STRONGEST_FIRST,
