@@ -13,7 +13,7 @@ namespace pandar_pointcloud
 {
 namespace pandar_qt
 {
-PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, ReturnMode return_mode)
+PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
 {
   firing_offset_ = {
     12.31,  14.37,  16.43,  18.49,  20.54,  22.6,   24.66,  26.71,  29.16,  31.22,  33.28,  35.34,  37.39,
@@ -39,6 +39,7 @@ PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, Ret
 
   scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
   return_mode_ = return_mode;
+  dual_return_distance_threshold_ = dual_return_distance_threshold;
 
   last_phase_ = 0;
   has_scanned_ = false;
@@ -170,8 +171,9 @@ PointcloudXYZIRADT PandarQTDecoder::convert_dual(const int block_id)
       block_pc->push_back(build_point(odd_block_id, unit_id, ReturnType::SINGLE_LAST)); 
     }
     else if (return_mode_ == ReturnMode::DUAL) {
-      if (even_unit.distance == odd_unit.distance && even_usable) {
-        block_pc->push_back(build_point(even_block_id, unit_id, ReturnType::DUAL_ONLY));
+      // If the two returns are too close, only return the last one
+      if ((abs(even_unit.distance - odd_unit.distance) < dual_return_distance_threshold_) && odd_usable) {
+        block_pc->push_back(build_point(odd_block_id, unit_id, ReturnType::DUAL_ONLY));
       }
       else {
         if (even_usable) {

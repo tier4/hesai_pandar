@@ -26,6 +26,7 @@ private:
   std::string return_mode_;
   std::string device_ip_;
   std::string calibration_path_;
+  double dual_return_distance_threshold_;
   double scan_phase_;
 
   ros::Subscriber pandar_packet_sub_;

@@ -13,7 +13,7 @@ namespace pandar_pointcloud
 {
 namespace pandar40
 {
-Pandar40Decoder::Pandar40Decoder(Calibration& calibration, float scan_phase, ReturnMode return_mode)
+Pandar40Decoder::Pandar40Decoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
 {
   firing_order_ = { 7,  19, 14, 26, 6,  18, 4,  32, 36, 0, 10, 22, 17, 29, 9,  21, 5,  33, 37, 1,
                     13, 25, 20, 30, 12, 8,  24, 34, 38, 2, 16, 28, 23, 31, 15, 11, 27, 35, 39, 3 };
@@ -38,6 +38,7 @@ Pandar40Decoder::Pandar40Decoder(Calibration& calibration, float scan_phase, Ret
 
   scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
   return_mode_ = return_mode;
+  dual_return_distance_threshold_ = dual_return_distance_threshold;
 
   last_phase_ = 0;
   has_scanned_ = false;
@@ -169,8 +170,8 @@ PointcloudXYZIRADT Pandar40Decoder::convert_dual(int block_id)
       block_pc->push_back(build_point(even_block_id, unit_id, ReturnType::SINGLE_LAST)); 
     }
     else if (return_mode_ == ReturnMode::DUAL) {
-      // Only one return when returns are equal
-      if (even_unit.distance == odd_unit.distance && even_usable) {
+      // If the two returns are too close, only return the last one
+      if ((abs(even_unit.distance - odd_unit.distance) < dual_return_distance_threshold_) && even_usable) {
         block_pc->push_back(build_point(even_block_id, unit_id, ReturnType::DUAL_ONLY));
       }
       else if (even_unit.intensity >= odd_unit.intensity) {

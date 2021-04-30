@@ -30,7 +30,7 @@ public:
     DUAL_ONLY,
   };
 
-  Pandar40Decoder(Calibration& calibration, float scan_phase = 0.0f, ReturnMode return_mode = ReturnMode::DUAL);
+  Pandar40Decoder(Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
@@ -51,6 +51,7 @@ private:
   std::array<size_t, LASER_COUNT> firing_order_;
 
   ReturnMode return_mode_;
+  double dual_return_distance_threshold_;
   Packet packet_;
 
   PointcloudXYZIRADT scan_pc_;

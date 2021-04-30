@@ -7,6 +7,7 @@
   <arg name="gps_port"  default="10110"/>
   <arg name="scan_phase"  default="0"/>
   <arg name="return_mode" default="Dual"/>
+  <arg name="dual_return_distance_threshold" default="0.1"/>
   <arg name="model" default="PandarQT"/>
   <arg name="frame_id" default="pandar"/>
   <arg name="calibration"  default="$(find pandar_pointcloud)/config/qt.csv"/>
@@ -34,6 +35,7 @@
     <remap from="pandar_points_ex" to="pointcloud_raw_ex" />
     <param name="scan_phase" type="double" value="$(arg scan_phase)"/>
     <param name="return_mode"  type="string" value="$(arg return_mode)"/>
+    <param name="dual_return_distance_threshold"  type="double" value="$(arg dual_return_distance_threshold)"/>
     <param name="model" type="string" value="$(arg model)"/>
     <param name="device_ip" type="string" value="$(arg device_ip)"/>
     <param name="calibration" type="string" value="$(arg calibration)"/>
