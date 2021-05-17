@@ -5,6 +5,9 @@
 #include "packet_decoder.hpp"
 #include "pandar_qt.hpp"
 
+static const float QT_ROTATION_RESOLUTION = 0.001f;
+static const uint32_t QT_ROTATION_MAX_UNITS = 360000u;
+
 namespace pandar_pointcloud
 {
 namespace pandar_qt
@@ -45,6 +48,10 @@ private:
   uint16_t scan_phase_;
   int last_phase_;
   bool has_scanned_;
+
+  double sin_rot_table_[QT_ROTATION_MAX_UNITS];
+  double cos_rot_table_[QT_ROTATION_MAX_UNITS];
+
 };
 
 }  // namespace pandar_qt

@@ -5,6 +5,9 @@
 #include "packet_decoder.hpp"
 #include "pandar40.hpp"
 
+static const float ROTATION_RESOLUTION = 0.001f;
+static const uint32_t ROTATION_MAX_UNITS = 360000u;
+
 namespace pandar_pointcloud
 {
 namespace pandar40
@@ -47,6 +50,10 @@ private:
   uint16_t scan_phase_;
   int last_phase_;
   bool has_scanned_;
+
+  double sin_rot_table_[ROTATION_MAX_UNITS];
+  double cos_rot_table_[ROTATION_MAX_UNITS];
+
 };
 
 }  // namespace pandar40
