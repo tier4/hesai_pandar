@@ -33,8 +33,8 @@ PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, Ret
   //   // calibration data is not valid!
   // }
   for (size_t laser = 0; laser < UNIT_NUM; ++laser) {
-    elev_angle_[laser] = calibration.elev_angle_map[laser];
-    azimuth_offset_[laser] = calibration.azimuth_offset_map[laser];
+    elev_angle_[laser] = (int32_t)round(calibration.elev_angle_map[laser] / QT_ROTATION_RESOLUTION);
+    azimuth_offset_[laser] = (int32_t)round(calibration.azimuth_offset_map[laser] / QT_ROTATION_RESOLUTION);
   }
 
   scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
@@ -111,8 +111,9 @@ PointcloudXYZIRADT PandarQTDecoder::convert(const int block_id)
       continue;
     }
     //calc index from deg
-    float azimuth_index_f = (azimuth_offset_[unit_id] + (static_cast<double>(block.azimuth)) / 100.0) / QT_ROTATION_RESOLUTION;
-    uint32_t abs_mod_azimuth_index_f = (uint32_t)abs(round(azimuth_index_f)) % QT_ROTATION_MAX_UNITS;
+    //(block.azimuth / 100) * QT_ROTATION_RESOLUTION 
+    int32_t azimuth_index_f = (azimuth_offset_[unit_id] + block.azimuth * 10);
+    uint32_t abs_mod_azimuth_index_f = (uint32_t)abs(azimuth_index_f) % QT_ROTATION_MAX_UNITS;
     uint32_t azimuth_index = 0;
     if(abs_mod_azimuth_index_f == 0) {
       //zero deg pattern  
@@ -129,15 +130,14 @@ PointcloudXYZIRADT PandarQTDecoder::convert(const int block_id)
       }
     }    
     
-    float elev_index_f = elev_angle_[unit_id] / QT_ROTATION_RESOLUTION;
-    uint32_t abs_mod_elev_index_f = (uint32_t)abs(round(elev_index_f)) % QT_ROTATION_MAX_UNITS;
+    uint32_t abs_mod_elev_index_f = (uint32_t)abs(elev_angle_[unit_id]) % QT_ROTATION_MAX_UNITS;
     uint32_t elev_index = 0;
     if(abs_mod_elev_index_f == 0) {
       //zero deg pattern  
       elev_index = 0;
     }
     else {
-      if(elev_index_f < 0) {
+      if(elev_angle_[unit_id] < 0) {
         // minus deg pattern
         elev_index = QT_ROTATION_MAX_UNITS - abs_mod_elev_index_f;
       }
@@ -190,8 +190,9 @@ PointcloudXYZIRADT PandarQTDecoder::convert_dual(const int block_id)
       }
 
       //calc index from deg
-      float azimuth_index_f = (azimuth_offset_[unit_id] + (static_cast<double>(block.azimuth)) / 100.0) / QT_ROTATION_RESOLUTION;
-      uint32_t abs_mod_azimuth_index_f = (uint32_t)abs(round(azimuth_index_f)) % QT_ROTATION_MAX_UNITS;
+      //(block.azimuth / 100) * QT_ROTATION_RESOLUTION 
+      int32_t azimuth_index_f = (azimuth_offset_[unit_id] + block.azimuth * 10);
+      uint32_t abs_mod_azimuth_index_f = (uint32_t)abs(azimuth_index_f) % QT_ROTATION_MAX_UNITS;
       uint32_t azimuth_index = 0;
       if(abs_mod_azimuth_index_f == 0) {
         //zero deg pattern  
@@ -208,15 +209,14 @@ PointcloudXYZIRADT PandarQTDecoder::convert_dual(const int block_id)
         }
       }    
       
-      float elev_index_f = elev_angle_[unit_id] / QT_ROTATION_RESOLUTION;
-      uint32_t abs_mod_elev_index_f = (uint32_t)abs(round(elev_index_f)) % QT_ROTATION_MAX_UNITS;
+      uint32_t abs_mod_elev_index_f = (uint32_t)abs(elev_angle_[unit_id]) % QT_ROTATION_MAX_UNITS;
       uint32_t elev_index = 0;
       if(abs_mod_elev_index_f == 0) {
         //zero deg pattern  
         elev_index = 0;
       }
       else {
-        if(elev_index_f < 0) {
+        if(elev_angle_[unit_id] < 0) {
           // minus deg pattern
           elev_index = QT_ROTATION_MAX_UNITS - abs_mod_elev_index_f;
         }

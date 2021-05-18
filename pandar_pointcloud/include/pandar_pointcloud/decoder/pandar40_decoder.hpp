@@ -32,9 +32,9 @@ private:
   PointcloudXYZIRADT convert(const size_t block_id);
   PointcloudXYZIRADT convert_dual(const size_t block_id);
 
-  std::array<float, LASER_COUNT> elev_angle_;
-  std::array<float, LASER_COUNT> azimuth_offset_;
-
+  std::array<int32_t, LASER_COUNT> elev_angle_;
+  std::array<int32_t, LASER_COUNT> azimuth_offset_;
+  
   std::array<float, LASER_COUNT> firing_offset_;
   std::array<float, BLOCKS_PER_PACKET> block_offset_single_;
   std::array<float, BLOCKS_PER_PACKET> block_offset_dual_;
