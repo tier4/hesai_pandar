@@ -81,8 +81,8 @@ bool PandarDriver::poll(void)
     current_phase = (current_phase - scan_phase + 36000) % 36000;
     if(scan->packets.size() > 1 && prev_phase > current_phase){
       // has scanned !
-      printf("%6d -> %6d -> %6d\n", prev_phase, scan_phase, current_phase);
-      printf("---------------------------------\n");
+      // printf("%6d -> %6d -> %6d\n", prev_phase, scan_phase, current_phase);
+      // printf("---------------------------------\n");
       break;
     }
     prev_phase = current_phase;
