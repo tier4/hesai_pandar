@@ -110,21 +110,33 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
 {
   PointcloudXYZIRADT pointcloud;
   pandar_msgs::PandarPacket pkt;
-
   for (auto& packet : scan_msg->packets) {
     decoder_->unpack(packet);
-    if (decoder_->hasScanned()) {
-      pointcloud = decoder_->getPointcloud();
-      if (pointcloud->points.size() > 0) {
-        pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
-        pointcloud->header.frame_id = scan_msg->header.frame_id;
-        pointcloud->height = 1;
-
-        pandar_points_ex_pub_.publish(pointcloud);
-        if (pandar_points_pub_.getNumSubscribers() > 0) {
-          pandar_points_pub_.publish(convertPointcloud(pointcloud));
+  }
+  pointcloud = decoder_->getPointcloud();
+  if (pointcloud->points.size() > 0) {
+    {
+      auto diff = ros::Time::now() - ros::Time(pointcloud->points.back().time_stamp);
+      printf("[%5.0f, %5.0f]\n", pointcloud->points.front().azimuth, pointcloud->points.back().azimuth);  
+      double a = 36001;
+      double b = 0;
+      for(auto p: pointcloud->points){
+        if(a > p.azimuth){
+          a = p.azimuth;
+        }
+        if(b < p.azimuth){
+          b = p.azimuth;
         }
       }
+      printf("-> %5.3f (min:%6.3f max:%6.3f)\n", diff.toSec(), a, b);
+    }
+    pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
+    pointcloud->header.frame_id = scan_msg->header.frame_id;
+    pointcloud->height = 1;
+
+    pandar_points_ex_pub_.publish(pointcloud);
+    if (pandar_points_pub_.getNumSubscribers() > 0) {
+      pandar_points_pub_.publish(convertPointcloud(pointcloud));
     }
   }
 }
@@ -149,4 +161,5 @@ PandarCloud::convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& i
   output_pointcloud->width = output_pointcloud->points.size();
   return output_pointcloud;
 }
+
 }  // namespace pandar_pointcloud

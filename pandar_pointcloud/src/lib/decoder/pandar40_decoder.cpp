@@ -54,6 +54,7 @@ bool Pandar40Decoder::hasScanned()
 
 PointcloudXYZIRADT Pandar40Decoder::getPointcloud()
 {
+  has_scanned_= true;
   return scan_pc_;
 }
 
@@ -79,16 +80,18 @@ void Pandar40Decoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   }
 
   auto step = dual_return ? 2 : 1;
-
   for (int block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += step) {
     auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
     int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
-    if (current_phase > last_phase_ && !has_scanned_) {
+    // printf("%6d\n", current_phase);
+    // if (current_phase > last_phase_ && !has_scanned_) {
+    if (current_phase > last_phase_) {
       *scan_pc_ += *block_pc;
     }
     else {
       *overflow_pc_ += *block_pc;
-      has_scanned_ = true;
+      // has_scanned_ = true;
+      // printf("#####################################\n");
     }
     last_phase_ = current_phase;
   }

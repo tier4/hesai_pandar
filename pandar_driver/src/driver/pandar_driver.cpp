@@ -14,6 +14,8 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
   private_nh.getParam("lidar_port", lidar_port_);
   private_nh.getParam("gps_port", gps_port_);
   private_nh.getParam("scan_phase", scan_phase_);
+  private_nh.getParam("min_range", min_range_);
+  private_nh.getParam("max_range", max_range_);
   private_nh.getParam("model", model_);
   private_nh.getParam("frame_id", frame_id_);
 
@@ -50,14 +52,20 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
 bool PandarDriver::poll(void)
 {
   int scan_phase = static_cast<int>(scan_phase_ * 100.0);
+  const int min_range = static_cast<int>(min_range_ * 100.0);
+  const int max_range = static_cast<int>(max_range_ * 100.0);
 
+  if(scan_phase < min_range || scan_phase > max_range){
+    scan_phase = max_range;
+  }
+
+  int debug_phase = 0;
   pandar_msgs::PandarScanPtr scan(new pandar_msgs::PandarScan);
   for (int prev_phase = 0;;) {  // finish scan
+    pandar_msgs::PandarPacket packet;
     while (true) {              // until receive lidar packet
-      pandar_msgs::PandarPacket packet;
       int packet_type = input_->getPacket(&packet);
       if (packet_type == 0 && is_valid_packet_(packet.size)) {
-        scan->packets.push_back(packet);
         break;
       }
       else if (packet_type == -1) {
@@ -65,19 +73,19 @@ bool PandarDriver::poll(void)
       }
     }
 
-    int current_phase = 0;
-    {
-      const auto& data = scan->packets.back().data;
-      current_phase = (data[azimuth_index_] & 0xff) | ((data[azimuth_index_ + 1] & 0xff) << 8);
-      current_phase = (static_cast<int>(current_phase) + 36000 - scan_phase) % 36000;
+    int current_phase = (packet.data[azimuth_index_] & 0xff) | ((packet.data[azimuth_index_ + 1] & 0xff) << 8);
+    if(min_range < current_phase && current_phase < max_range){
+      scan->packets.push_back(packet);
     }
-    if (current_phase >= prev_phase || scan->packets.size() < 2) {
-      prev_phase = current_phase;
-    }
-    else {
+
+    current_phase = (current_phase - scan_phase + 36000) % 36000;
+    if(scan->packets.size() > 1 && prev_phase > current_phase){
       // has scanned !
+      printf("%6d -> %6d -> %6d\n", prev_phase, scan_phase, current_phase);
+      printf("---------------------------------\n");
       break;
     }
+    prev_phase = current_phase;
   }
 
   scan->header.stamp = scan->packets.front().stamp;

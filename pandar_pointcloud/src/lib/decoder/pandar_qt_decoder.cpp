@@ -55,6 +55,7 @@ bool PandarQTDecoder::hasScanned()
 
 PointcloudXYZIRADT PandarQTDecoder::getPointcloud()
 {
+  has_scanned_= true;
   return scan_pc_;
 }
 
@@ -83,12 +84,13 @@ void PandarQTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   for (int block_id = 0; block_id < BLOCK_NUM; block_id += step) {
     auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
     int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
-    if (current_phase > last_phase_ && !has_scanned_) {
+    // if (current_phase > last_phase_ && !has_scanned_) {
+    if (current_phase > last_phase_) {
       *scan_pc_ += *block_pc;
     }
     else {
       *overflow_pc_ += *block_pc;
-      has_scanned_ = true;
+      // has_scanned_ = true;
     }
     last_phase_ = current_phase;
   }

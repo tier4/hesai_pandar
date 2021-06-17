@@ -17,6 +17,8 @@ private:
   int lidar_port_;
   int gps_port_;
   double scan_phase_;
+  double min_range_;
+  double max_range_;
   size_t azimuth_index_;
 
   std::string model_;
