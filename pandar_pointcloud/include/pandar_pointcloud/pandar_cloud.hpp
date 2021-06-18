@@ -28,6 +28,8 @@ private:
   std::string calibration_path_;
   double dual_return_distance_threshold_;
   double scan_phase_;
+  double min_range_;
+  double max_range_;
 
   ros::Subscriber pandar_packet_sub_;
   ros::Publisher pandar_points_pub_;

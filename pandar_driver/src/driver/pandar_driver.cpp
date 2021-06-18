@@ -55,7 +55,7 @@ bool PandarDriver::poll(void)
   const int min_range = static_cast<int>(min_range_ * 100.0);
   const int max_range = static_cast<int>(max_range_ * 100.0);
 
-  if(scan_phase < min_range || scan_phase > max_range){
+  if(scan_phase <= min_range || scan_phase >= max_range){
     scan_phase = max_range;
   }
 

@@ -13,7 +13,7 @@ namespace pandar_pointcloud
 {
 namespace pandar40
 {
-Pandar40Decoder::Pandar40Decoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+Pandar40Decoder::Pandar40Decoder(Calibration& calibration, float scan_phase, float min_range, float max_range, double dual_return_distance_threshold, ReturnMode return_mode)
 {
   firing_order_ = { 7,  19, 14, 26, 6,  18, 4,  32, 36, 0, 10, 22, 17, 29, 9,  21, 5,  33, 37, 1,
                     13, 25, 20, 30, 12, 8,  24, 34, 38, 2, 16, 28, 23, 31, 15, 11, 27, 35, 39, 3 };
@@ -37,6 +37,8 @@ Pandar40Decoder::Pandar40Decoder(Calibration& calibration, float scan_phase, dou
   }
 
   scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
+  min_range_ = static_cast<uint16_t>(min_range * 100.0f);
+  max_range_ = static_cast<uint16_t>(max_range * 100.0f);
   return_mode_ = return_mode;
   dual_return_distance_threshold_ = dual_return_distance_threshold;
 
@@ -83,12 +85,11 @@ void Pandar40Decoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   for (int block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += step) {
     auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
     int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
-    // printf("%6d\n", current_phase);
     // if (current_phase > last_phase_ && !has_scanned_) {
     if (current_phase > last_phase_) {
       *scan_pc_ += *block_pc;
     }
-    else {
+    else if(packet_.blocks[block_id].azimuth < max_range_){
       *overflow_pc_ += *block_pc;
       // has_scanned_ = true;
       // printf("#####################################\n");

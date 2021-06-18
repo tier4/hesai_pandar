@@ -19,6 +19,8 @@ namespace pandar_pointcloud
 PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
 {
   private_nh.getParam("scan_phase", scan_phase_);
+  private_nh.getParam("min_range", min_range_);
+  private_nh.getParam("max_range", max_range_);
   private_nh.getParam("return_mode", return_mode_);
   private_nh.getParam("dual_return_distance_threshold", dual_return_distance_threshold_);
   private_nh.getParam("calibration", calibration_path_);
@@ -43,7 +45,7 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
       ROS_ERROR("Invalid return mode, defaulting to strongest return mode"); 
       selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::STRONGEST;
     }
-    decoder_ = std::make_shared<pandar40::Pandar40Decoder>(calibration_, scan_phase_,
+    decoder_ = std::make_shared<pandar40::Pandar40Decoder>(calibration_, scan_phase_, min_range_, max_range_,
                                                            dual_return_distance_threshold_,
                                                            selected_return_mode);
   }
@@ -59,7 +61,7 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
       ROS_ERROR("Invalid return mode, defaulting to dual return mode"); 
       selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
     }
-    decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(calibration_, scan_phase_,
+    decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(calibration_, scan_phase_, min_range_, max_range_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }
@@ -128,7 +130,7 @@ void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_ms
     //       b = p.azimuth;
     //     }
     //   }
-    //   // printf("-> %5.3f (min:%6.3f max:%6.3f)\n", diff.toSec(), a, b);
+    //   printf("-> %5.3f (min:%6.3f max:%6.3f)\n", diff.toSec(), a, b);
     // }
     pointcloud->header.stamp = pcl_conversions::toPCL(ros::Time(pointcloud->points[0].time_stamp));
     pointcloud->header.frame_id = scan_msg->header.frame_id;

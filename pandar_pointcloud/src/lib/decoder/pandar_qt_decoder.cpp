@@ -13,7 +13,7 @@ namespace pandar_pointcloud
 {
 namespace pandar_qt
 {
-PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, float min_range, float max_range, double dual_return_distance_threshold, ReturnMode return_mode)
 {
   firing_offset_ = {
     12.31,  14.37,  16.43,  18.49,  20.54,  22.6,   24.66,  26.71,  29.16,  31.22,  33.28,  35.34,  37.39,
@@ -38,6 +38,8 @@ PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, dou
   }
 
   scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
+  min_range_ = static_cast<uint16_t>(min_range * 100.0f);
+  max_range_ = static_cast<uint16_t>(max_range * 100.0f);
   return_mode_ = return_mode;
   dual_return_distance_threshold_ = dual_return_distance_threshold;
 
@@ -88,7 +90,7 @@ void PandarQTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
     if (current_phase > last_phase_) {
       *scan_pc_ += *block_pc;
     }
-    else {
+    else if(packet_.blocks[block_id].azimuth < max_range_){
       *overflow_pc_ += *block_pc;
       // has_scanned_ = true;
     }

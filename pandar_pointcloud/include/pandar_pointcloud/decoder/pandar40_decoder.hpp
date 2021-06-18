@@ -30,7 +30,7 @@ public:
     DUAL_ONLY,
   };
 
-  Pandar40Decoder(Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
+  Pandar40Decoder(Calibration& calibration, float scan_phase = 0.0f,  float min_range = 0.0f, float max_range = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
@@ -58,6 +58,8 @@ private:
   PointcloudXYZIRADT overflow_pc_;
 
   uint16_t scan_phase_;
+  uint16_t min_range_;
+  uint16_t max_range_;
   int last_phase_;
   bool has_scanned_;
 };
