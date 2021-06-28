@@ -34,6 +34,10 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
     azimuth_index_ = 12;  // 12 + 258 * [0-3]
     is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1072); };
   }
+  else  if (model_ == "PandarXT-32") {
+    azimuth_index_ = 12;  // 12 + 130 * [0-7]
+    is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1080); };
+  }
   else if (model_ == "Pandar64") {
     azimuth_index_ = 8;  // 8 + 192 * [0-5]
     is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1194 || packet_size == 1198); };

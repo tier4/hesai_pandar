@@ -3,6 +3,7 @@
 #include "pandar_pointcloud/calibration.hpp"
 #include "pandar_pointcloud/decoder/pandar40_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_qt_decoder.hpp"
+#include "pandar_pointcloud/decoder/pandar_xt_decoder.hpp"
 
 #include <chrono>
 #include <thread>
@@ -60,6 +61,24 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
       selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
     }
     decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(calibration_, scan_phase_,
+                                                            dual_return_distance_threshold_,
+                                                            selected_return_mode);
+  }
+  else if (model_ == "PandarXT-32") {
+    pandar_xt::PandarXTDecoder::ReturnMode selected_return_mode;
+    if (return_mode_ == "First")
+      selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::FIRST;
+    else if (return_mode_ == "STRONGEST")
+      selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::STRONGEST;
+    else if (return_mode_ == "Last")
+      selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::LAST;
+    else if (return_mode_ == "Dual")
+      selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::DUAL;
+    else {
+      ROS_ERROR("Invalid return mode, defaulting to dual return mode"); 
+      selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::DUAL;
+    }
+    decoder_ = std::make_shared<pandar_xt::PandarXTDecoder>(calibration_, scan_phase_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }
