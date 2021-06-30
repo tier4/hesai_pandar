@@ -91,7 +91,7 @@ void PandarQTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
       *scan_pc_ += *block_pc;
     }
     else if(packet_.blocks[block_id].azimuth < max_range_){
-      *overflow_pc_ += *block_pc;
+      // *overflow_pc_ += *block_pc;
       // has_scanned_ = true;
     }
     last_phase_ = current_phase;
