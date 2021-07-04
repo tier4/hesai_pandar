@@ -12,7 +12,6 @@
 
 namespace
 {
-const uint16_t TCP_COMMAND_PORT = 9347;
 const size_t TCP_RETRY_NUM = 5;
 const double TCP_RETRY_WAIT_SEC = 0.1;
 
@@ -35,7 +34,7 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
   model_ = declare_parameter("model", "");
   device_ip_ = declare_parameter("device_ip","");
 
-  tcp_client_ = std::make_shared<TcpCommandClient>(device_ip_, TCP_COMMAND_PORT);
+  tcp_client_ = std::make_shared<pandar_api::TCPClient>(device_ip_);
   if (!setupCalibration()) {
     RCLCPP_WARN(get_logger(), "Unable to load calibration data");
     return;
@@ -131,11 +130,11 @@ bool PandarCloud::setupCalibration()
   if (!calibration_path_.empty() && calibration_.loadFile(calibration_path_) == 0) {
     return true;
   }
-  else if (tcp_client_) {
+  if (tcp_client_) {
     std::string content("");
     for (size_t i = 0; i < TCP_RETRY_NUM; ++i) {
       auto ret = tcp_client_->getLidarCalibration(content);
-      if (ret == TcpCommandClient::PTC_ErrCode::PTC_ERROR_NO_ERROR) {
+      if (ret == pandar_api::TCPClient::ReturnCode::SUCCESS) {
         break;
       }
       rclcpp::Rate(1.0/TCP_RETRY_WAIT_SEC).sleep();

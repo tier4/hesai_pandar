@@ -25,8 +25,11 @@ PandarDriverCore::PandarDriverCore(rclcpp::Node *node)
     input_.reset(new PcapInput(node, lidar_port_, gps_port_, pcap_path_, model_));
   }
   else {
-    input_.reset(new SocketInput(node, lidar_port_, gps_port_));
+    input_.reset(new SocketInput(node, device_ip_, lidar_port_, gps_port_));
   }
+
+  client_ = std::make_shared<pandar_api::TCPClient>(device_ip_);
+  // uint16_t range[2];
 
   if (model_ == "Pandar40P" || model_ == "Pandar40M") {
     azimuth_index_ = 2;  // 2 + 124 * [0-9]
@@ -61,13 +64,10 @@ bool PandarDriverCore::poll(void)
   for (int prev_phase = 0;;) {  // finish scan
     while (true) {              // until receive lidar packet
       pandar_msgs::msg::PandarPacket packet;
-      int packet_type = input_->getPacket(&packet);
-      if (packet_type == 0 && is_valid_packet_(packet.size)) {
+      Input::PacketType packet_type = input_->getPacket(&packet);
+      if (packet_type == Input::PacketType::LIDAR && is_valid_packet_(packet.size)) {
         scan->packets.push_back(packet);
         break;
-      }
-      else if (packet_type == -1) {
-        // return false;
       }
     }
 

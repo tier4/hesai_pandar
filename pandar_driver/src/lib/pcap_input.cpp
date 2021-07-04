@@ -72,7 +72,7 @@ void PcapInput::initTimeIndexMap()
   time_index_map_.insert(std::pair<std::string, std::pair<int, int>>("PandarXT-16", std::pair<int, int>(559, 553)));
 }
 
-int PcapInput::getPacket(pandar_msgs::msg::PandarPacket* pandar_pkt)
+PcapInput::PacketType PcapInput::getPacket(pandar_msgs::msg::PandarPacket* pandar_pkt)
 {
   pcap_pkthdr* pkt_header;
   const uint8_t* pkt_data;
@@ -134,10 +134,10 @@ int PcapInput::getPacket(pandar_msgs::msg::PandarPacket* pandar_pkt)
           last_time_ += sleep_time;
         }
       }
-      return 0;
+      return PacketType::LIDAR;
     }
     else {
-      return -1;
+      return PacketType::ERROR;
     }
   }
 }
