@@ -59,12 +59,15 @@ bool PandarDriver::poll(void)
   for (int prev_phase = 0;;) {  // finish scan
     while (true) {              // until receive lidar packet
       pandar_msgs::PandarPacket packet;
-      int packet_type = input_->getPacket(&packet);
-      if (packet_type == 0 && is_valid_packet_(packet.size)) {
+      Input::PacketType packet_type = input_->getPacket(&packet);
+      if (packet_type == Input::PacketType::LIDAR && is_valid_packet_(packet.size)) {
         scan->packets.push_back(packet);
         break;
       }
-      else if (packet_type == -1) {
+      else if (packet_type == Input::PacketType::TIMEOUT) {
+        // return false;
+      }
+      else if (packet_type == Input::PacketType::ERROR) {
         // return false;
       }
     }
