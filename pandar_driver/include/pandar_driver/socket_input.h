@@ -25,14 +25,15 @@ namespace pandar_driver
 class SocketInput : public Input
 {
 public:
-  SocketInput(uint16_t port, uint16_t gpsPort);
+  SocketInput(uint16_t port, uint16_t gpsPort, int timeout=1000);
   ~SocketInput();
-  int getPacket(pandar_msgs::PandarPacket* pkt) override;
+  PacketType getPacket(pandar_msgs::PandarPacket* pkt) override;
 
 private:
-  int socketForLidar;
-  int socketForGPS;
-  int socketNumber;
+  int lidar_socket_;
+  int gps_socket_;
+  int socket_num_;
+  int timeout_;
 };
 
 }  // namespace pandar_driver
