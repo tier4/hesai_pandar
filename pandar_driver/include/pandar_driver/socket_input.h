@@ -16,23 +16,27 @@
 
 #pragma once
 
-#include <netinet/in.h>
 #include <string>
+#include <boost/asio.hpp>
 #include "pandar_driver/input.h"
 
 namespace pandar_driver
 {
+using boost::asio::ip::udp;
+
 class SocketInput : public Input
 {
 public:
-  SocketInput(uint16_t port, uint16_t gpsPort, int timeout=1000);
+  SocketInput(const std::string& device_ip, uint16_t port, uint16_t gps_port, int timeout=1000);
   ~SocketInput();
   PacketType getPacket(pandar_msgs::PandarPacket* pkt) override;
 
 private:
-  int lidar_socket_;
-  int gps_socket_;
-  int socket_num_;
+  boost::asio::io_service io_service_;
+  udp::socket lidar_socket_;
+  udp::socket gps_socket_;
+
+  boost::asio::ip::address device_ip_;
   int timeout_;
 };
 

@@ -23,7 +23,7 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
     input_.reset(new PcapInput(lidar_port_, gps_port_, pcap_path_, model_));
   }
   else {
-    input_.reset(new SocketInput(lidar_port_, gps_port_));
+    input_.reset(new SocketInput(device_ip_, lidar_port_, gps_port_));
   }
 
   if (model_ == "Pandar40P" || model_ == "Pandar40M") {
@@ -65,6 +65,7 @@ bool PandarDriver::poll(void)
         break;
       }
       else if (packet_type == Input::PacketType::TIMEOUT) {
+        if(scan->packets.size())
         // return false;
       }
       else if (packet_type == Input::PacketType::ERROR) {
