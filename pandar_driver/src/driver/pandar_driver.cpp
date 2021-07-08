@@ -26,6 +26,9 @@ PandarDriver::PandarDriver(ros::NodeHandle node, ros::NodeHandle private_nh)
     input_.reset(new SocketInput(device_ip_, lidar_port_, gps_port_));
   }
 
+  client_ = std::make_shared<pandar_api::TCPClient>(device_ip_);
+  // uint16_t range[2];
+
   if (model_ == "Pandar40P" || model_ == "Pandar40M") {
     azimuth_index_ = 2;  // 2 + 124 * [0-9]
     is_valid_packet_ = [](size_t packet_size) { return (packet_size == 1262 || packet_size == 1266); };

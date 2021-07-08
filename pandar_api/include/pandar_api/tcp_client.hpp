@@ -21,7 +21,7 @@ struct LidarStatus
 class TCPClient
 {
 public:
-  TCPClient(const std::string& device_ip);
+  TCPClient(const std::string& device_ip, int32_t timeout=100/*usec*/);
 
   enum class ReturnCode : uint8_t
   {
@@ -40,8 +40,8 @@ public:
 
 private:
   boost::asio::io_service io_service_;
-  boost::asio::ip::address device_ip_;
   boost::asio::ip::tcp::socket socket_;
+  boost::asio::ip::address device_ip_;
 
   enum PTC_COMMAND : uint8_t
   {

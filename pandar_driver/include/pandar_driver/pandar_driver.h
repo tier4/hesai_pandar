@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <pandar_api/tcp_client.hpp>
 
 namespace pandar_driver
 {
@@ -25,6 +26,7 @@ private:
 
   ros::Publisher pandar_packet_pub_;
   std::shared_ptr<Input> input_;
+  std::shared_ptr<pandar_api::TCPClient> client_;
 
   std::function<bool(size_t)> is_valid_packet_;
 };

@@ -15,6 +15,7 @@ catkin_package(
     include
   CATKIN_DEPENDS
   LIBRARIES
+    pandar_api
 )
 
 include_directories(
@@ -34,11 +35,11 @@ target_link_libraries(pandar_api
 
 
 ## add node
-add_executable(client
-  src/main.cpp
+add_executable(example
+  src/example.cpp
 )
 
-target_link_libraries(client
+target_link_libraries(example
   pandar_api
   ${catkin_LIBRARIES}
 )
@@ -48,7 +49,7 @@ target_link_libraries(client
 install(
   TARGETS
     pandar_api
-    client
+    example
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   sensor_msgs
   pandar_msgs
+  pandar_api
 )
 
 catkin_package(
@@ -19,6 +20,7 @@ catkin_package(
     include
   CATKIN_DEPENDS
     pandar_msgs
+    pandar_api
   LIBRARIES
     pandar_cloud
 )
