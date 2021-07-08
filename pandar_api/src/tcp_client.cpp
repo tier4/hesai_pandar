@@ -29,6 +29,7 @@ TCPClient::TCPClient(const std::string& device_ip, int32_t timeout)
   struct timeval tv{0, timeout};
   setsockopt(socket_.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv) );
   setsockopt(socket_.native_handle(), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv) );
+
 }
 
 TCPClient::ReturnCode TCPClient::getLidarCalibration(std::string& content)
@@ -38,7 +39,6 @@ TCPClient::ReturnCode TCPClient::getLidarCalibration(std::string& content)
 
   header.cmd = PTC_COMMAND_GET_LIDAR_CALIBRATION;
   auto return_code = sendCmd(header, payload);
-  socket_.close();
   if(return_code == ReturnCode::SUCCESS){
     content = std::string(payload.data(), payload.data() + payload.size());
     return ReturnCode::SUCCESS;
@@ -54,7 +54,6 @@ TCPClient::ReturnCode TCPClient::getLidarRange(uint16_t* range)
 
   header.cmd = PTC_COMMAND_GET_LIDAR_RANGE;
   auto return_code = sendCmd(header, payload);
-  socket_.close();
   if(return_code == ReturnCode::SUCCESS){
     if(payload[0] != 0){
       // not support each-channel / multi-section
@@ -76,7 +75,6 @@ TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
 
   header.cmd = PTC_COMMAND_GET_LIDAR_STATUS;
   auto return_code = sendCmd(header, payload);
-  socket_.close();
   if(return_code == ReturnCode::SUCCESS){
 
     uint8_t* it = payload.data();
@@ -112,58 +110,45 @@ TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
 
 TCPClient::ReturnCode TCPClient::sendCmd(MessageHeader& header, std::vector<uint8_t>& payload)
 {
-  boost::system::error_code error;
   std::vector<uint8_t> buffer;
+  try {
+    // connect
+    socket_.connect(boost::asio::ip::tcp::endpoint(device_ip_, API_PORT));
 
-  // connect
-  socket_.connect(boost::asio::ip::tcp::endpoint(device_ip_, API_PORT), error);
-  if (error) {
-    return ReturnCode::CONNECTION_FAILED;
-  }
+    // send header
+    buffer.resize(HEADER_SIZE);
+    header.write(buffer.data());
+    boost::asio::write(socket_, boost::asio::buffer(buffer));
 
-  // send header
-  buffer.resize(HEADER_SIZE);
-  header.write(buffer.data());
-  boost::asio::write(socket_, boost::asio::buffer(buffer), error);
-  if(error){
-    return ReturnCode::CONNECTION_FAILED;
-  }
-
-  // send payload
-  if(payload.size() > 0){
-    boost::asio::write(socket_, boost::asio::buffer(payload), error);
-    if(error){
-      // std::cout << error.message() << std::endl;
-      return ReturnCode::CONNECTION_FAILED;
+    // send payload
+    if(payload.size() > 0){
+      boost::asio::write(socket_, boost::asio::buffer(payload));
     }
-  }
-  // receive header
-  boost::asio::read(socket_, boost::asio::buffer(buffer), boost::asio::transfer_exactly(HEADER_SIZE), error);
-  if(error){
-    // std::cout << error.message() << std::endl;
-    return ReturnCode::CONNECTION_FAILED;
-  }else{
+
+    // receive header
+    boost::asio::read(socket_, boost::asio::buffer(buffer), boost::asio::transfer_exactly(HEADER_SIZE));
     header.read(buffer.data());
     if(header.protocol_identifier[0] != 0x47 || header.protocol_identifier[1] != 0x74){
+      socket_.close();
       return ReturnCode::CONNECTION_FAILED;
-    }
-    if((ReturnCode)header.return_code != ReturnCode::SUCCESS) {
+    }else if((ReturnCode)header.return_code != ReturnCode::SUCCESS) {
+      socket_.close();
       return (ReturnCode)header.return_code;
     }
-  }
 
-  // receive payload
-  if(header.payload_length > 0){
-    payload.resize(header.payload_length);
-    boost::asio::read(socket_, boost::asio::buffer(payload), boost::asio::transfer_exactly(payload.size()), error);
-    if(error){
-      // std::cout << error.message() << std::endl;
-      return ReturnCode::CONNECTION_FAILED;
+    // receive payload
+    if(header.payload_length > 0){
+      payload.resize(header.payload_length);
+      boost::asio::read(socket_, boost::asio::buffer(payload), boost::asio::transfer_exactly(payload.size()));
     }
+    socket_.close();
+    return ReturnCode::SUCCESS;
+  } catch (const boost::system::system_error &e) {
+    std::cout << "catch error !!" << std::endl;
+    socket_.close();
+    return ReturnCode::CONNECTION_FAILED;
   }
-
-
-  return ReturnCode::SUCCESS;
 }
+
 
 }  // namespace pandar_api
