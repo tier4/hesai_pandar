@@ -34,8 +34,6 @@ include_directories(
 add_library(pandar_cloud
   src/pandar_cloud.cpp
   src/lib/calibration.cpp
-  src/lib/tcp_command_client.cpp
-  src/lib/tcp_util.cpp
   src/lib/decoder/pandar40_decoder.cpp
   src/lib/decoder/pandar_qt_decoder.cpp
   src/lib/decoder/pandar_xt_decoder.cpp
