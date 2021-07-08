@@ -65,7 +65,8 @@ bool PandarDriver::poll(void)
         break;
       }
       else if (packet_type == Input::PacketType::TIMEOUT) {
-        if(scan->packets.size())
+        if(scan->packets.size() > 0){
+        }
         // return false;
       }
       else if (packet_type == Input::PacketType::ERROR) {
