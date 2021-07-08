@@ -19,15 +19,16 @@ namespace{
 
 namespace pandar_api
 {
-TCPClient::TCPClient(const std::string& device_ip)
+TCPClient::TCPClient(const std::string& device_ip, int32_t timeout)
   : io_service_(),
     socket_(io_service_)
 {
-  boost::system::error_code error;
-  socket_.connect(boost::asio::ip::tcp::endpoint(boost::asio::ip::address::from_string(device_ip), API_PORT), error);
-  if (error) {
-    std::cout << "connect failed : " << error.message() << std::endl;
-  }
+  device_ip_ = boost::asio::ip::address::from_string(device_ip);
+
+  // timeout setting
+  struct timeval tv{0, timeout};
+  setsockopt(socket_.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv) );
+  setsockopt(socket_.native_handle(), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv) );
 }
 
 TCPClient::ReturnCode TCPClient::getLidarCalibration(std::string& content)
@@ -37,6 +38,7 @@ TCPClient::ReturnCode TCPClient::getLidarCalibration(std::string& content)
 
   header.cmd = PTC_COMMAND_GET_LIDAR_CALIBRATION;
   auto return_code = sendCmd(header, payload);
+  socket_.close();
   if(return_code == ReturnCode::SUCCESS){
     content = std::string(payload.data(), payload.data() + payload.size());
     return ReturnCode::SUCCESS;
@@ -52,6 +54,7 @@ TCPClient::ReturnCode TCPClient::getLidarRange(uint16_t* range)
 
   header.cmd = PTC_COMMAND_GET_LIDAR_RANGE;
   auto return_code = sendCmd(header, payload);
+  socket_.close();
   if(return_code == ReturnCode::SUCCESS){
     if(payload[0] != 0){
       // not support each-channel / multi-section
@@ -73,6 +76,7 @@ TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
 
   header.cmd = PTC_COMMAND_GET_LIDAR_STATUS;
   auto return_code = sendCmd(header, payload);
+  socket_.close();
   if(return_code == ReturnCode::SUCCESS){
 
     uint8_t* it = payload.data();
@@ -110,6 +114,12 @@ TCPClient::ReturnCode TCPClient::sendCmd(MessageHeader& header, std::vector<uint
 {
   boost::system::error_code error;
   std::vector<uint8_t> buffer;
+
+  // connect
+  socket_.connect(boost::asio::ip::tcp::endpoint(device_ip_, API_PORT), error);
+  if (error) {
+    return ReturnCode::CONNECTION_FAILED;
+  }
 
   // send header
   buffer.resize(HEADER_SIZE);
@@ -151,6 +161,7 @@ TCPClient::ReturnCode TCPClient::sendCmd(MessageHeader& header, std::vector<uint
       return ReturnCode::CONNECTION_FAILED;
     }
   }
+
 
   return ReturnCode::SUCCESS;
 }
