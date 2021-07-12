@@ -42,6 +42,7 @@ private:
   boost::asio::io_service io_service_;
   boost::asio::ip::tcp::socket socket_;
   boost::asio::ip::address device_ip_;
+  boost::asio::steady_timer timer_;
 
   enum PTC_COMMAND : uint8_t
   {
@@ -115,7 +116,16 @@ private:
 
   };
 
-  ReturnCode sendCmd(MessageHeader& header, std::vector<uint8_t>& payload);
+  MessageHeader header_;
+  std::vector<uint8_t> payload_;
+  std::vector<uint8_t> buffer_;
+  ReturnCode return_code_;
+
+  void connect();
+  void on_connect(const boost::system::error_code& error);
+  void on_send(const boost::system::error_code& error);
+  void on_receive(const boost::system::error_code& error);
+  void on_timer(const boost::system::error_code& error);
 };
 
 }  // namespace pandar_pointcloud
