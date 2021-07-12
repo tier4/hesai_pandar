@@ -1,6 +1,7 @@
 #include <string>
 #include <iostream>
 #include <cstdint>
+#include <boost/bind.hpp>
 
 #include "pandar_api/tcp_client.hpp"
 
@@ -21,63 +22,48 @@ namespace pandar_api
 {
 TCPClient::TCPClient(const std::string& device_ip, int32_t timeout)
   : io_service_(),
-    socket_(io_service_)
+    socket_(io_service_),
+    timer_(io_service_),
+    return_code_(ReturnCode::SUCCESS)
 {
   device_ip_ = boost::asio::ip::address::from_string(device_ip);
-
-  // timeout setting
-  struct timeval tv{0, timeout};
-  setsockopt(socket_.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv) );
-  setsockopt(socket_.native_handle(), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv) );
-
 }
+
 
 TCPClient::ReturnCode TCPClient::getLidarCalibration(std::string& content)
 {
-  MessageHeader header;
-  std::vector<uint8_t> payload;
-
-  header.cmd = PTC_COMMAND_GET_LIDAR_CALIBRATION;
-  auto return_code = sendCmd(header, payload);
-  if(return_code == ReturnCode::SUCCESS){
-    content = std::string(payload.data(), payload.data() + payload.size());
-    return ReturnCode::SUCCESS;
-  }else{
-    return return_code;
+  header_.cmd = PTC_COMMAND_GET_LIDAR_CALIBRATION;
+  connect();
+  if(return_code_ == ReturnCode::SUCCESS){
+    content = std::string(payload_.data(), payload_.data() + payload_.size());
   }
+  return return_code_;
 }
 
 TCPClient::ReturnCode TCPClient::getLidarRange(uint16_t* range)
 {
-  MessageHeader header;
-  std::vector<uint8_t> payload;
-
-  header.cmd = PTC_COMMAND_GET_LIDAR_RANGE;
-  auto return_code = sendCmd(header, payload);
-  if(return_code == ReturnCode::SUCCESS){
-    if(payload[0] != 0){
+  header_.cmd = PTC_COMMAND_GET_LIDAR_CALIBRATION;
+  connect();
+  if(return_code_ == ReturnCode::SUCCESS){
+    if(payload_[0] != 0){
       // not support each-channel / multi-section
       return ReturnCode::NO_SUPPORT;
     }else{
-      range[0] = parse16(&payload[1]);
-      range[1] = parse16(&payload[3]);
-      return ReturnCode::SUCCESS;
+      range[0] = parse16(&payload_[1]);
+      range[1] = parse16(&payload_[3]);
+      return return_code_;
     }
   }else{
-    return return_code;
+    return return_code_;
   }
 }
 
 TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
 {
-  MessageHeader header;
-  std::vector<uint8_t> payload;
-
-  header.cmd = PTC_COMMAND_GET_LIDAR_STATUS;
-  auto return_code = sendCmd(header, payload);
-  if(return_code == ReturnCode::SUCCESS){
-
-    uint8_t* it = payload.data();
+  header_.cmd = PTC_COMMAND_GET_LIDAR_STATUS;
+  connect();
+  if(return_code_ == ReturnCode::SUCCESS){
+    uint8_t* it = payload_.data();
 
     status.uptime = parse32(it);
     it += 4;
@@ -102,53 +88,99 @@ TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
     
     status.ptp_clock_status = *it;
 
-    return ReturnCode::SUCCESS;
+    return return_code_;
   }else{
-    return return_code;
+    return return_code_;
   }
 }
 
-TCPClient::ReturnCode TCPClient::sendCmd(MessageHeader& header, std::vector<uint8_t>& payload)
+void TCPClient::connect()
 {
-  std::vector<uint8_t> buffer;
-  try {
-    // connect
-    socket_.connect(boost::asio::ip::tcp::endpoint(device_ip_, API_PORT));
 
-    // send header
-    buffer.resize(HEADER_SIZE);
-    header.write(buffer.data());
-    boost::asio::write(socket_, boost::asio::buffer(buffer));
+  socket_.async_connect(
+    boost::asio::ip::tcp::endpoint(device_ip_, API_PORT),
+    boost::bind(&TCPClient::on_connect, this, boost::asio::placeholders::error));
 
-    // send payload
-    if(payload.size() > 0){
-      boost::asio::write(socket_, boost::asio::buffer(payload));
-    }
+  timer_.expires_from_now(std::chrono::milliseconds(100));
+  timer_.async_wait(boost::bind(&TCPClient::on_timer, this, boost::placeholders::_1));
+  io_service_.run();
+}
 
-    // receive header
-    boost::asio::read(socket_, boost::asio::buffer(buffer), boost::asio::transfer_exactly(HEADER_SIZE));
-    header.read(buffer.data());
-    if(header.protocol_identifier[0] != 0x47 || header.protocol_identifier[1] != 0x74){
-      socket_.close();
-      return ReturnCode::CONNECTION_FAILED;
-    }else if((ReturnCode)header.return_code != ReturnCode::SUCCESS) {
-      socket_.close();
-      return (ReturnCode)header.return_code;
-    }
+void TCPClient::on_connect(const boost::system::error_code& error)
+{
+  if (error) {
+    return_code_ = ReturnCode::CONNECTION_FAILED;
+    return;
+  }
 
-    // receive payload
-    if(header.payload_length > 0){
-      payload.resize(header.payload_length);
-      boost::asio::read(socket_, boost::asio::buffer(payload), boost::asio::transfer_exactly(payload.size()));
-    }
+  // send header
+  buffer_.resize(HEADER_SIZE + payload_.size());
+  header_.write(buffer_.data());
+  std::memcpy(buffer_.data() + HEADER_SIZE, payload_.data(), payload_.size());
+
+  boost::asio::async_write(
+      socket_,
+      boost::asio::buffer(buffer_),
+      boost::bind(&TCPClient::on_send, this, boost::asio::placeholders::error));
+}
+
+void TCPClient::on_send(const boost::system::error_code& error)
+{
+  if (error) {
+    return_code_ = ReturnCode::CONNECTION_FAILED;
+    return;
+  }
+
+  boost::asio::async_read(
+    socket_,
+    boost::asio::buffer(buffer_),
+    boost::asio::transfer_exactly(HEADER_SIZE),
+    boost::bind(&TCPClient::on_receive, this, boost::asio::placeholders::error));
+}
+
+void TCPClient::on_receive(const boost::system::error_code& error)
+{
+  if (error) {
+    return_code_ = ReturnCode::CONNECTION_FAILED;
+    return;
+  }
+  header_.read(buffer_.data());
+  if(header_.protocol_identifier[0] != 0x47 || header_.protocol_identifier[1] != 0x74){
+    return_code_ = ReturnCode::CONNECTION_FAILED;
     socket_.close();
-    return ReturnCode::SUCCESS;
-  } catch (const boost::system::system_error &e) {
-    std::cout << "catch error !!" << std::endl;
+    return;
+  }else if((ReturnCode)header_.return_code != ReturnCode::SUCCESS) {
+    return_code_ = (ReturnCode)header_.return_code;
     socket_.close();
-    return ReturnCode::CONNECTION_FAILED;
+    return;
+  }
+
+  // receive payload
+  if (header_.payload_length > 0){
+    payload_.resize(header_.payload_length);
+    boost::asio::async_read(
+        socket_,
+        boost::asio::buffer(payload_),
+        boost::asio::transfer_exactly(payload_.size()),
+        [this](const boost::system::error_code& error, std::size_t)
+        {
+          if (error){
+            return_code_ = ReturnCode::CONNECTION_FAILED;
+          }
+          else {
+            timer_.cancel();
+            return;
+          }
+        });
   }
 }
 
+void TCPClient::on_timer(const boost::system::error_code& error)
+{
+  if (!error) {
+    return_code_ = ReturnCode::CONNECTION_FAILED;
+    socket_.close();
+  }
+}
 
 }  // namespace pandar_api
