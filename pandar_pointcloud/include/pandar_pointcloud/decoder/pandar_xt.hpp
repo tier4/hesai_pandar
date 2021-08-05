@@ -1,20 +1,22 @@
 #pragma once
 /**
- * Pandar QT
+ * Pandar XT-32
  */
 #include <cstdint>
 namespace pandar_pointcloud
 {
-namespace pandar_qt
+namespace pandar_xt
 {
+
+
 // Head
 constexpr size_t HEAD_SIZE = 12;
 constexpr size_t PRE_HEADER_SIZE = 6;
 constexpr size_t HEADER_SIZE = 6;
 // Body
-constexpr size_t BLOCK_NUM = 4;
+constexpr size_t BLOCK_NUM = 8;
 constexpr size_t BLOCK_HEADER_AZIMUTH = 2;
-constexpr size_t UNIT_NUM = 64;
+constexpr size_t UNIT_NUM = 32;
 constexpr size_t UNIT_SIZE = 4;
 constexpr size_t BLOCK_SIZE = UNIT_SIZE * UNIT_NUM + BLOCK_HEADER_AZIMUTH;
 constexpr size_t BODY_SIZE = BLOCK_SIZE * BLOCK_NUM;
@@ -27,15 +29,18 @@ constexpr size_t FACTORY_SIZE = 1;
 constexpr size_t UTC_SIZE = 6;
 constexpr size_t SEQUENCE_SIZE = 4;
 constexpr size_t PACKET_TAIL_SIZE = 28;
-constexpr size_t PACKET_TAIL_WITHOUT_UDPSEQ_SIZE = 24;
 
 // All
 constexpr size_t PACKET_SIZE = HEAD_SIZE + BODY_SIZE + PACKET_TAIL_SIZE;
-constexpr size_t PACKET_WITHOUT_UDPSEQ_SIZE = HEAD_SIZE + BODY_SIZE + PACKET_TAIL_WITHOUT_UDPSEQ_SIZE;
+
+// 0x33 - First Return      0x39 - Dual Return (Last, Strongest)
+// 0x37 - Strongest Return  0x3B - Dual Return (Last, First)
+// 0x38 - Last Return       0x3C - Dual Return (First, Strongest)
 
 constexpr uint32_t FIRST_RETURN = 0x33;
+constexpr uint32_t STRONGEST_RETURN = 0x37;
 constexpr uint32_t LAST_RETURN = 0x38;
-constexpr uint32_t DUAL_RETURN = 0x3B;
+constexpr uint32_t DUAL_RETURN = 0x39;
 
 struct Header
 {
