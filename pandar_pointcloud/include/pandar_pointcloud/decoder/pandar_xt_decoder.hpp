@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <rclcpp/rclcpp.hpp>
 #include "pandar_pointcloud/calibration.hpp"
 #include "packet_decoder.hpp"
 #include "pandar_xt.hpp"
@@ -20,13 +21,16 @@ public:
     LAST,
   };
 
-  PandarXTDecoder(Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
-  void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
+  PandarXTDecoder(rclcpp::Node & node, Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
+  void unpack(const pandar_msgs::msg::PandarPacket& raw_packet) override;
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
 
 private:
-  bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
+  rclcpp::Logger logger_;
+  rclcpp::Clock::SharedPtr clock_;
+
+  bool parsePacket(const pandar_msgs::msg::PandarPacket& raw_packet);
   PointcloudXYZIRADT convert(const int block_id);
   PointcloudXYZIRADT convert_dual(const int block_id);
 

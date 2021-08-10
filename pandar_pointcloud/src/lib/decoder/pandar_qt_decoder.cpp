@@ -13,7 +13,8 @@ namespace pandar_pointcloud
 {
 namespace pandar_qt
 {
-PandarQTDecoder::PandarQTDecoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+PandarQTDecoder::PandarQTDecoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+: logger_(node.get_logger()), clock_(node.get_clock())
 {
   firing_offset_ = {
     12.31,  14.37,  16.43,  18.49,  20.54,  22.6,   24.66,  26.71,  29.16,  31.22,  33.28,  35.34,  37.39,
@@ -76,11 +77,11 @@ void PandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
   if (!dual_return) {
     if ((packet_.return_mode == FIRST_RETURN && return_mode_ != ReturnMode::FIRST) || 
         (packet_.return_mode == LAST_RETURN && return_mode_ != ReturnMode::LAST)) {
-      ROS_WARN ("Sensor return mode configuration does not match requested return mode");
+      RCLCPP_WARN(logger_, "Sensor return mode configuration does not match requested return mode");
     }
   }
 
-  for (int block_id = 0; block_id < BLOCK_NUM; block_id += step) {
+  for (size_t block_id = 0; block_id < BLOCK_NUM; block_id += step) {
     auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
     int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
     if (current_phase > last_phase_ && !has_scanned_) {
@@ -129,7 +130,6 @@ PointcloudXYZIRADT PandarQTDecoder::convert(const int block_id)
 
   const auto& block = packet_.blocks[block_id];
   for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
-    PointXYZIRADT point;
     const auto& unit = block.units[unit_id];
     // skip invalid points
     if (unit.distance <= 0.1 || unit.distance > 200.0) {

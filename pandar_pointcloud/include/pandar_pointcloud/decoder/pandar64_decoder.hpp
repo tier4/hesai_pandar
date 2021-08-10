@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <rclcpp/rclcpp.hpp>
 #include "pandar_pointcloud/calibration.hpp"
 #include "packet_decoder.hpp"
 #include "pandar64.hpp"
@@ -28,12 +29,13 @@ namespace pandar_pointcloud
         DUAL_ONLY,
       };
 
-      explicit Pandar64Decoder(Calibration& calibration,
+      explicit Pandar64Decoder(rclcpp::Node & node,
+                               Calibration& calibration,
                                float scan_phase = 0.0f,
                                double dual_return_distance_threshold = 0.1,
                                ReturnMode return_mode = ReturnMode::DUAL);
 
-      void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
+      void unpack(const pandar_msgs::msg::PandarPacket& raw_packet) override;
 
       PointXYZIRADT build_point(int block_id, int unit_id, int8_t return_type);
 
@@ -42,7 +44,10 @@ namespace pandar_pointcloud
       PointcloudXYZIRADT getPointcloud() override;
 
     private:
-      bool parsePacket(const pandar_msgs::PandarPacket& raw_packet);
+      rclcpp::Logger logger_;
+      rclcpp::Clock::SharedPtr clock_;
+
+      bool parsePacket(const pandar_msgs::msg::PandarPacket& raw_packet);
 
       PointcloudXYZIRADT convert(int block_id);
 

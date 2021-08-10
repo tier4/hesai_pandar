@@ -30,7 +30,7 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
 {
   scan_phase_ = declare_parameter("scan_phase", 0.0);
   return_mode_ = declare_parameter("return_mode", "");
-  dual_return_distance_threshold_ = declare_parameter("dual_return_distance_threshold", "");
+  dual_return_distance_threshold_ = declare_parameter("dual_return_distance_threshold", 0.1);
   calibration_path_ = declare_parameter("calibration", "");
   model_ = declare_parameter("model", "");
   device_ip_ = declare_parameter("device_ip","");
@@ -50,10 +50,10 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
     else if (return_mode_ == "Dual")
       selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::DUAL;
     else {
-      ROS_ERROR("Invalid return mode, defaulting to strongest return mode"); 
+      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to strongest return mode"); 
       selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::STRONGEST;
     }
-    decoder_ = std::make_shared<pandar40::Pandar40Decoder>(calibration_, scan_phase_,
+    decoder_ = std::make_shared<pandar40::Pandar40Decoder>(*this,calibration_, scan_phase_,
                                                            dual_return_distance_threshold_,
                                                            selected_return_mode);
   }
@@ -66,10 +66,10 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
     else if (return_mode_ == "Dual")
       selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
     else {
-      ROS_ERROR("Invalid return mode, defaulting to dual return mode"); 
+      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
       selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
     }
-    decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(calibration_, scan_phase_,
+    decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(*this, calibration_, scan_phase_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }
@@ -84,10 +84,10 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
     else if (return_mode_ == "Dual")
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::DUAL;
     else {
-      ROS_ERROR("Invalid return mode, defaulting to dual return mode"); 
+      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::DUAL;
     }
-    decoder_ = std::make_shared<pandar_xt::PandarXTDecoder>(calibration_, scan_phase_,
+    decoder_ = std::make_shared<pandar_xt::PandarXTDecoder>(*this, calibration_, scan_phase_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }
@@ -100,10 +100,10 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
     else if (return_mode_ == "Dual")
       selected_return_mode = pandar64::Pandar64Decoder::ReturnMode::DUAL;
     else {
-      ROS_ERROR("Invalid return mode, defaulting to dual return mode");
+      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode");
       selected_return_mode = pandar64::Pandar64Decoder::ReturnMode::DUAL;
     }
-    decoder_ = std::make_shared<pandar64::Pandar64Decoder>(calibration_, scan_phase_,
+    decoder_ = std::make_shared<pandar64::Pandar64Decoder>(*this, calibration_, scan_phase_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }

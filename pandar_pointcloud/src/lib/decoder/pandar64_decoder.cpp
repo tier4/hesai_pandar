@@ -13,7 +13,8 @@ namespace pandar_pointcloud
 {
   namespace pandar64
   {
-    Pandar64Decoder::Pandar64Decoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+    Pandar64Decoder::Pandar64Decoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+    : logger_(node.get_logger()), clock_(node.get_clock())
     {
       firing_offset_ = {
         23.18, 21.876, 20.572, 19.268, 17.964, 16.66, 11.444, 46.796,
@@ -26,7 +27,7 @@ namespace pandar_pointcloud
         6.228, 15.356, 10.14, 4.924, 3.62, 14.052, 8.836, 12.748
       };
 
-      for (int block = 0; block < BLOCK_NUM; ++block) {
+      for (size_t block = 0; block < BLOCK_NUM; ++block) {
         block_offset_single_[block] = 55.56f * (BLOCK_NUM - block - 1) + 28.58f;
         block_offset_dual_[block] = 55.56f * ((BLOCK_NUM - block - 1) / 2) + 28.58f;
       }
@@ -61,7 +62,7 @@ namespace pandar_pointcloud
       return scan_pc_;
     }
 
-    void Pandar64Decoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
+    void Pandar64Decoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
     {
       if (!parsePacket(raw_packet)) {
         return;
@@ -79,11 +80,11 @@ namespace pandar_pointcloud
       if (!dual_return) {
         if ((packet_.return_mode == STRONGEST_RETURN && return_mode_ != ReturnMode::STRONGEST) ||
             (packet_.return_mode == LAST_RETURN && return_mode_ != ReturnMode::LAST)) {
-          ROS_WARN ("Sensor return mode configuration does not match requested return mode");
+          RCLCPP_WARN(logger_, "Sensor return mode configuration does not match requested return mode");
         }
       }
 
-      for (int block_id = 0; block_id < BLOCK_NUM; block_id += step) {
+      for (size_t block_id = 0; block_id < BLOCK_NUM; block_id += step) {
         auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
         int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
         if (current_phase > last_phase_ && !has_scanned_) {
@@ -131,7 +132,6 @@ namespace pandar_pointcloud
 
       const auto& block = packet_.blocks[block_id];
       for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
-        PointXYZIRADT point{};
         const auto& unit = block.units[unit_id];
         // skip invalid points
         if (unit.distance <= 0.1 || unit.distance > 200.0) {
@@ -190,7 +190,7 @@ namespace pandar_pointcloud
       return block_pc;
     }
 
-    bool Pandar64Decoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
+    bool Pandar64Decoder::parsePacket(const pandar_msgs::msg::PandarPacket& raw_packet)
     {
       if (raw_packet.size != PACKET_SIZE && raw_packet.size != PACKET_WITHOUT_UDPSEQ_SIZE) {
         return false;
@@ -211,7 +211,7 @@ namespace pandar_pointcloud
         return false;
       }
 
-      for (size_t block = 0; block < packet_.header.chBlockNumber; block++) {
+      for (int8_t block = 0; block < packet_.header.chBlockNumber; block++) {
         packet_.blocks[block].azimuth = (buf[index] & 0xff) | ((buf[index + 1] & 0xff) << 8);
         index += BLOCK_HEADER_AZIMUTH;
 

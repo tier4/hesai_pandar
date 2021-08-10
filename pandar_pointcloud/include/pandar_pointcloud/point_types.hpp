@@ -35,8 +35,12 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(pandar_pointcloud::PointXYZIR,
                                                                                                        ring, ring))
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(pandar_pointcloud::PointXYZIRADT,
-                                  (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(
-                                      std::uint16_t, ring, ring)(float, azimuth, azimuth)(float, distance,
-                                                                                          distance)(int8_t, return_type,
-                                                                                          return_type)(double, time_stamp,
-                                                                                                        time_stamp))
+                                  (float, x, x)
+                                  (float, y, y)
+                                  (float, z, z)
+                                  (float, intensity, intensity)
+                                  (std::uint16_t, ring, ring)
+                                  (float, azimuth, azimuth)
+                                  (float, distance, distance)
+                                  (std::int8_t, return_type, return_type)
+                                  (double, time_stamp, time_stamp))

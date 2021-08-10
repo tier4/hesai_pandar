@@ -13,7 +13,8 @@ namespace pandar_pointcloud
 {
 namespace pandar40
 {
-Pandar40Decoder::Pandar40Decoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+Pandar40Decoder::Pandar40Decoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+: logger_(node.get_logger()), clock_(node.get_clock())
 {
   firing_order_ = { 7,  19, 14, 26, 6,  18, 4,  32, 36, 0, 10, 22, 17, 29, 9,  21, 5,  33, 37, 1,
                     13, 25, 20, 30, 12, 8,  24, 34, 38, 2, 16, 28, 23, 31, 15, 11, 27, 35, 39, 3 };
@@ -74,7 +75,7 @@ void Pandar40Decoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
   if (!dual_return) {
     if ((packet_.return_mode == STRONGEST_RETURN && return_mode_ != ReturnMode::STRONGEST) || 
         (packet_.return_mode == LAST_RETURN && return_mode_ != ReturnMode::LAST)) {
-      ROS_WARN ("Sensor return mode configuration does not match requested return mode");
+      RCLCPP_WARN(logger_, "Sensor return mode configuration does not match requested return mode");
     }
   }
 
@@ -124,7 +125,7 @@ PointXYZIRADT Pandar40Decoder::build_point(int block_id, int unit_id, int8_t ret
   return point;
 }
 
-PointcloudXYZIRADT Pandar40Decoder::convert(int block_id)
+PointcloudXYZIRADT Pandar40Decoder::convert(const int block_id)
 {
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
@@ -134,7 +135,7 @@ PointcloudXYZIRADT Pandar40Decoder::convert(int block_id)
   return block_pc;
 }
 
-PointcloudXYZIRADT Pandar40Decoder::convert_dual(size_t block_id)
+PointcloudXYZIRADT Pandar40Decoder::convert_dual(const int block_id)
 {
   //   Under the Dual Return mode, the measurements from each round of firing are stored in two adjacent blocks:
   // · The even number block is the last return, and the odd number block is the strongest return

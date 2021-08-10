@@ -13,13 +13,14 @@ namespace pandar_pointcloud
 {
 namespace pandar_xt
 {
-PandarXTDecoder::PandarXTDecoder(Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+PandarXTDecoder::PandarXTDecoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+: logger_(node.get_logger()), clock_(node.get_clock())
 {
-  for(int unit = 0; unit < UNIT_NUM; ++unit){
+  for(size_t unit = 0; unit < UNIT_NUM; ++unit){
     firing_offset_[unit] = 1.512 * unit + 0.28;
   }
 
-  for (int block = 0; block < BLOCK_NUM; ++block) {
+  for (size_t block = 0; block < BLOCK_NUM; ++block) {
     block_offset_single_[block] = 3.28f - 50.00f * (BLOCK_NUM - block - 1);
     block_offset_dual_[block] = 3.28f - 50.00f * ((BLOCK_NUM - block - 1) / 2);
   }
@@ -53,7 +54,7 @@ PointcloudXYZIRADT PandarXTDecoder::getPointcloud()
   return scan_pc_;
 }
 
-void PandarXTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
+void PandarXTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
 {
   if (!parsePacket(raw_packet)) {
     return;
@@ -68,7 +69,7 @@ void PandarXTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   bool dual_return = (packet_.return_mode != FIRST_RETURN && packet_.return_mode != STRONGEST_RETURN && packet_.return_mode != LAST_RETURN);
   auto step = dual_return ? 2 : 1;
 
-  for (int block_id = 0; block_id < BLOCK_NUM; block_id += step) {
+  for (size_t block_id = 0; block_id < BLOCK_NUM; block_id += step) {
     auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
     int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
     if (current_phase > last_phase_ && !has_scanned_) {
@@ -162,7 +163,7 @@ PointcloudXYZIRADT PandarXTDecoder::convert_dual(const int block_id)
   return block_pc;
 }
 
-bool PandarXTDecoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
+bool PandarXTDecoder::parsePacket(const pandar_msgs::msg::PandarPacket& raw_packet)
 {
   if (raw_packet.size != PACKET_SIZE) {
     return false;
@@ -185,7 +186,7 @@ bool PandarXTDecoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
     return false;
   }
 
-  for (size_t block = 0; block < packet_.header.chBlockNumber; block++) {
+  for (int8_t block = 0; block < packet_.header.chBlockNumber; block++) {
     packet_.blocks[block].azimuth = (buf[index] & 0xff) | ((buf[index + 1] & 0xff) << 8);
     index += BLOCK_HEADER_AZIMUTH;
 
