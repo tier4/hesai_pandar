@@ -90,8 +90,8 @@ PointcloudXYZIRADT Pandar40Decoder::convert(int block_id)
 {
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
-  // double unix_second = raw_packet.header.stamp.toSec() // system-time (packet receive time)
-  double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
+  double unix_second = stamp_.toSec(); // system-time (packet receive time)
+  // double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
 
   for (auto unit_id : firing_order_) {
     PointXYZIRADT point;
@@ -129,7 +129,8 @@ PointcloudXYZIRADT Pandar40Decoder::convert_dual(int block_id)
   // · If the last and strongest returns coincide, the second strongest return will be placed in the even number block
   // · The Azimuth changes every two blocks
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
-  double unix_second = static_cast<double>(timegm(&packet_.t));
+  double unix_second = stamp_.toSec();
+  // double unix_second = static_cast<double>(timegm(&packet_.t));
 
   auto head = block_id + ((return_mode_ == ReturnMode::STRONGEST) ? 1 : 0);
   auto tail = block_id + ((return_mode_ == ReturnMode::LAST) ? 1 : 2);
@@ -175,6 +176,7 @@ bool Pandar40Decoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
 
   // auto buf = raw_packet.data;
   const uint8_t* buf = &raw_packet.data[0];
+  stamp_ = raw_packet.stamp;
 
   int index = 0;
   for (int i = 0; i < BLOCKS_PER_PACKET; i++) {

@@ -91,8 +91,8 @@ PointcloudXYZIRADT PandarQTDecoder::convert(const int block_id)
 {
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
-  // double unix_second = raw_packet.header.stamp.toSec() // system-time (packet receive time)
-  double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
+  double unix_second = stamp_.toSec(); // system-time (packet receive time)unix_second
+  // double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
 
   const auto& block = packet_.blocks[block_id];
   for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
@@ -128,8 +128,8 @@ PointcloudXYZIRADT PandarQTDecoder::convert_dual(const int block_id)
 {
   PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
-  // double unix_second = raw_packet.header.stamp.toSec() // system-time (packet receive time)
-  double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
+  double unix_second = stamp_.toSec(); // system-time (packet receive time)
+  // double unix_second = static_cast<double>(timegm(&packet_.t));  // sensor-time (ppt/gps)
 
   auto head = block_id + ((return_mode_ == ReturnMode::FIRST) ? 1 : 0);
   auto tail = block_id + ((return_mode_ == ReturnMode::LAST) ? 1 : 2);
@@ -172,6 +172,7 @@ bool PandarQTDecoder::parsePacket(const pandar_msgs::PandarPacket& raw_packet)
     return false;
   }
   const uint8_t* buf = &raw_packet.data[0];
+  stamp_ = raw_packet.stamp;
 
   size_t index = 0;
   // Parse 12 Bytes Header

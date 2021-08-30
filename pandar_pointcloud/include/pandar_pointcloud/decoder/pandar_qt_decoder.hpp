@@ -38,6 +38,7 @@ private:
 
   ReturnMode return_mode_;
   Packet packet_;
+  ros::Time stamp_;
 
   PointcloudXYZIRADT scan_pc_;
   PointcloudXYZIRADT overflow_pc_;
