@@ -11,7 +11,6 @@
 
 namespace
 {
-const uint16_t TCP_COMMAND_PORT = 9347;
 const size_t TCP_RETRY_NUM = 5;
 const double TCP_RETRY_WAIT_SEC = 0.1;
 }  // namespace
@@ -27,7 +26,7 @@ PandarCloud::PandarCloud(ros::NodeHandle node, ros::NodeHandle private_nh)
   private_nh.getParam("model", model_);
   private_nh.getParam("device_ip", device_ip_);
 
-  tcp_client_ = std::make_shared<TcpCommandClient>(device_ip_, TCP_COMMAND_PORT);
+  tcp_client_ = std::make_shared<pandar_api::TCPClient>(device_ip_);
   if (!setupCalibration()) {
     ROS_ERROR("Unable to load calibration data");
     return;
@@ -120,11 +119,11 @@ bool PandarCloud::setupCalibration()
   if (!calibration_path_.empty() && calibration_.loadFile(calibration_path_) == 0) {
     return true;
   }
-  else if (tcp_client_) {
+  if (tcp_client_) {
     std::string content("");
     for (size_t i = 0; i < TCP_RETRY_NUM; ++i) {
       auto ret = tcp_client_->getLidarCalibration(content);
-      if (ret == TcpCommandClient::PTC_ErrCode::PTC_ERROR_NO_ERROR) {
+      if (ret == pandar_api::TCPClient::ReturnCode::SUCCESS) {
         break;
       }
       ros::Duration(TCP_RETRY_WAIT_SEC).sleep();
@@ -140,6 +139,7 @@ bool PandarCloud::setupCalibration()
       return false;
     }
   }
+  return false;
 }
 
 void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_msg)

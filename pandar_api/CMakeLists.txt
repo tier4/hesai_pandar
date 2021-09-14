@@ -1,83 +1,58 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(pandar_driver)
+project(pandar_api)
 
 add_compile_options(-std=c++14)
-
 
 find_package(catkin REQUIRED COMPONENTS
   roscpp
   roslib
-  nodelet
-  pluginlib
-  pandar_msgs
-  pandar_api
 )
+
+find_package(Boost REQUIRED)
 
 catkin_package(
   INCLUDE_DIRS
     include
   CATKIN_DEPENDS
-    pandar_msgs
-    pandar_api
   LIBRARIES
-    pandar_input
+    pandar_api
 )
 
 include_directories(
   include
+  ${Boost_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
 # Target
-add_library(pandar_input
-  src/lib/socket_input.cpp
-  src/lib/pcap_input.cpp
+add_library(pandar_api
+  src/tcp_client.cpp
 )
-target_link_libraries(pandar_input
-  pcap
+target_link_libraries(pandar_api
+  ${Boost_LIBRARIES}
   ${catkin_LIBRARIES}
 )
+
 
 ## add node
-add_executable(pandar_driver_node
-  src/driver/node.cpp
-  src/driver/pandar_driver.cpp
+add_executable(example
+  src/example.cpp
 )
 
-target_link_libraries(pandar_driver_node
-  pandar_input  
+target_link_libraries(example
+  pandar_api
   ${catkin_LIBRARIES}
 )
-
-## add nodelet
-add_library(pandar_driver_nodelet
-  src/driver/nodelet.cpp
-  src/driver/pandar_driver.cpp
-)
-
-target_link_libraries(pandar_driver_nodelet
-  pandar_input
-  ${catkin_LIBRARIES}
-)
-
 
 # Install
 ## executables and libraries
 install(
   TARGETS
-    pandar_driver_node
-    pandar_driver_nodelet
-    pandar_input
+    pandar_api
+    example
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-)
-
-## files
-install(
-  FILES
-    nodelet_pandar_driver.xml
-  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )
 
 ## project namespaced headers
@@ -91,5 +66,6 @@ install(
 install(
   DIRECTORY
     launch
+    config
   DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 )

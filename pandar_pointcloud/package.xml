@@ -19,6 +19,7 @@
   <depend>sensor_msgs</depend>
   <depend>pandar_msgs</depend>
   <depend>pandar_driver</depend>
+  <depend>pandar_api</depend>
   
   <export>
     <nodelet plugin="${prefix}/nodelet_pandar_pointcloud.xml"/>
