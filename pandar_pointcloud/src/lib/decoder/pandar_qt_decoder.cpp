@@ -95,7 +95,7 @@ void PandarQTDecoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   return;
 }
 
-PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, int8_t return_type)
+PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, uint8_t return_type)
 {
   const auto& block = packet_.blocks[block_id];
   const auto& unit = block.units[unit_id];

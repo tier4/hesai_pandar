@@ -18,7 +18,7 @@ namespace pandar_pointcloud
         STRONGEST,
         LAST,
       };
-      enum ReturnType : int8_t
+      enum ReturnType : uint8_t
       {
         INVALID = 0,
         SINGLE_STRONGEST,
@@ -35,7 +35,7 @@ namespace pandar_pointcloud
 
       void unpack(const pandar_msgs::PandarPacket& raw_packet) override;
 
-      PointXYZIRADT build_point(int block_id, int unit_id, int8_t return_type);
+      PointXYZIRADT build_point(int block_id, int unit_id, uint8_t return_type);
 
       bool hasScanned() override;
 
