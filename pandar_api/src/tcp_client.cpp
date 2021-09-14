@@ -169,51 +169,25 @@ TCPClient::ReturnCode TCPClient::getLidarStatus(LidarStatus& status)
 TCPClient::ReturnCode TCPClient::getPTPDiagnostics(PTPDiag& diag)
 {
   header_ = MessageHeader();
-  // header_.cmd = PTC_COMMAND_PTP_DIAGNOSTICS;
-  header_.cmd = PTC_COMMAND_SET_UDP_SEQUENCE;
+  header_.cmd = PTC_COMMAND_PTP_DIAGNOSTICS;
   header_.payload_length = 1;
   payload_.clear();
   payload_.push_back(0x01);
 
-  // payload_.resize(4);
-  // uint32_t length = be32toh(0x01);
-  // std::memcpy(payload_.data(), &length, sizeof(uint32_t));
-
   connect();
-  // if(return_code_ == ReturnCode::SUCCESS){
-  //   uint8_t* it = payload_.data();
-  //   diag.master_offset = parse64(it);
-  //   it += 8;
-  //   uint32_t test = parse32(it);
-  //   it += 4;
-  //   diag.elapsed_millisec = parse32(it);
-  //   it += 4;
-  //   std::cout << diag.master_offset << std::endl;
-  //   std::cout << test << std::endl;
-  //   std::cout << diag.elapsed_millisec << std::endl;
-  // }
-
+  if(return_code_ == ReturnCode::SUCCESS){
+    uint8_t* it = payload_.data();
+    diag.master_offset = parse64(it);
+    it += 8;
+    uint32_t test = parse32(it);
+    it += 4;
+    diag.elapsed_millisec = parse32(it);
+    it += 4;
+    std::cout << diag.master_offset << std::endl;
+    std::cout << test << std::endl;
+    std::cout << diag.elapsed_millisec << std::endl;
+  }
   return return_code_;
-  // header_ = MessageHeader();
-  // header_.cmd = PTC_COMMAND_SET_NOISE_FILTERING;
-  // header_.payload_length = 1;
-  // payload_.resize(1);
-  // payload_[0] = 0x01;
-  // connect();
-  // if(return_code_ == ReturnCode::SUCCESS){
-  //   uint8_t* it = payload_.data();
-  //   diag.master_offset = parse64(it);
-  //   it += 8;
-  //   uint32_t test = parse32(it);
-  //   it += 4;
-  //   diag.elapsed_millisec = parse32(it);
-  //   it += 4;
-  //   std::cout << diag.master_offset << std::endl;
-  //   std::cout << test << std::endl;
-  //   std::cout << diag.elapsed_millisec << std::endl;
-  // }
-  // return return_code_;
-
 }
 
 void TCPClient::connect()
@@ -232,7 +206,6 @@ void TCPClient::on_connect(const boost::system::error_code& error)
 {
   if (error) {
     return_code_ = ReturnCode::CONNECTION_FAILED;
-    std::cout << __LINE__ << " : " <<error.message() << std::endl;
     return;
   }
 
@@ -242,9 +215,6 @@ void TCPClient::on_connect(const boost::system::error_code& error)
   buffer_.resize(HEADER_SIZE + payload_.size());
   header_.write(buffer_.data());
   std::memcpy(buffer_.data() + HEADER_SIZE, payload_.data(), payload_.size());
-
-  // buffer_.resize(HEADER_SIZE);
-  // header_.write(buffer_.data());
 
   boost::asio::async_write(
       socket_,
@@ -257,36 +227,9 @@ void TCPClient::on_send(const boost::system::error_code& error)
 {
   if (error) {
     return_code_ = ReturnCode::CONNECTION_FAILED;
-    std::cout << __LINE__ << " : " <<error.message() << std::endl;
     return;
   }
 
-  // if(payload_.size() > 0){
-  //   std::cout << __LINE__ << " : " << payload_.size() << std::endl;
-  //   boost::asio::async_write(
-  //     socket_,
-  //     boost::asio::buffer(payload_),
-  //     [this](const boost::system::error_code& error, std::size_t)
-  //     {
-  //       if (error){
-  //         return_code_ = ReturnCode::CONNECTION_FAILED;
-  //         std::cout << __LINE__ << " : " <<error.message() << std::endl;
-  //       }
-  //       else {
-  //         boost::asio::async_read(
-  //           socket_,
-  //           boost::asio::buffer(buffer_),
-  //           boost::asio::transfer_exactly(HEADER_SIZE),
-  //           boost::bind(&TCPClient::on_receive, this, boost::asio::placeholders::error));
-  //       }
-  //     });
-  // }else{
-  //   boost::asio::async_read(
-  //     socket_,
-  //     boost::asio::buffer(buffer_),
-  //     boost::asio::transfer_exactly(HEADER_SIZE),
-  //     boost::bind(&TCPClient::on_receive, this, boost::asio::placeholders::error));
-  // }
   boost::asio::async_read(
   socket_,
   boost::asio::buffer(buffer_),
@@ -298,7 +241,6 @@ void TCPClient::on_receive(const boost::system::error_code& error)
 {
   if (error) {
     return_code_ = ReturnCode::CONNECTION_FAILED;
-    std::cout << __LINE__ << " : " <<error.message() << std::endl;
     return;
   }
   header_.read(buffer_.data());
@@ -314,7 +256,6 @@ void TCPClient::on_receive(const boost::system::error_code& error)
 
   // receive payload
   if (header_.payload_length > 0){
-    std::cout << "!!!!" << header_.payload_length << std::endl;
     payload_.resize(header_.payload_length);
     boost::asio::async_read(
         socket_,
@@ -324,7 +265,6 @@ void TCPClient::on_receive(const boost::system::error_code& error)
         {
           if (error){
             return_code_ = ReturnCode::CONNECTION_FAILED;
-            std::cout << __LINE__ << " : " <<error.message() << std::endl;
           }
           else {
             socket_.close();
@@ -339,7 +279,6 @@ void TCPClient::on_timer(const boost::system::error_code& error)
 {
   if (!error) {
     return_code_ = ReturnCode::CONNECTION_FAILED;
-    std::cout << __LINE__ << " : TIMEOUT -> " << error.message() << std::endl;
     socket_.close();
   }
 }

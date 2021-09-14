@@ -13,8 +13,11 @@ SocketInput::SocketInput(const std::string& device_ip, uint16_t port, uint16_t g
     gps_socket_(io_service_, udp::endpoint(udp::v4(), gps_port))
 {
   device_ip_ = boost::asio::ip::address::from_string(device_ip);
-  // lidar_socket_.set_option(boost::asio::detail::socket_option::integer<SOL_SOCKET, SO_RCVTIMEO>(timeout));
+
   timeout_ = timeout;
+  struct timeval tv{0, timeout_};
+  setsockopt(lidar_socket_.native_handle(), SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv) );
+  setsockopt(lidar_socket_.native_handle(), SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv) );
 }
 
 SocketInput::~SocketInput(void)
