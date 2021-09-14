@@ -18,6 +18,28 @@ struct LidarStatus
   uint8_t ptp_clock_status;
 };
 
+struct InventoryInfo
+{
+  std::string sn;
+  std::string date_of_manufacture;
+  std::string mac;
+  std::string sw_ver;
+  std::string hw_ver;
+  std::string control_fw_ver;
+  std::string sensor_fw_ver;
+  uint16_t angle_offset; 
+  std::string model;
+  std::string motor_type;
+  uint8_t num_of_lines;
+};
+
+struct PTPDiag
+{
+  int64_t master_offset;
+  std::string ptp_state;
+  uint32_t elapsed_millisec;
+};
+
 class TCPClient
 {
 public:
@@ -34,9 +56,11 @@ public:
     FPGA_ERROR    = 0x06, // - server fails to communicate with the inner FPGA
   };
 
+  ReturnCode getInventoryInfo(InventoryInfo& info);
   ReturnCode getLidarCalibration(std::string& content);
   ReturnCode getLidarRange(uint16_t* range);
   ReturnCode getLidarStatus(LidarStatus& status);
+  ReturnCode getPTPDiagnostics(PTPDiag& diag);
 
 private:
   boost::asio::io_service io_service_;
@@ -111,7 +135,14 @@ private:
       buffer[index++] = return_code;
 
       uint32_t length = be32toh(payload_length);
+      // uint32_t length = payload_length;
       std::memcpy(buffer + index, &length, sizeof(uint32_t));
+
+      // buffer[index++] = (payload_length >> 24) & 0xff;
+      // buffer[index++] = (payload_length >> 16) & 0xff;
+      // buffer[index++] = (payload_length >> 8) & 0xff;
+      // buffer[index++] = (payload_length >> 0) & 0xff;
+
     }
 
   };
