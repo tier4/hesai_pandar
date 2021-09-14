@@ -119,7 +119,7 @@ bool PandarCloud::setupCalibration()
   if (!calibration_path_.empty() && calibration_.loadFile(calibration_path_) == 0) {
     return true;
   }
-  else if (tcp_client_) {
+  if (tcp_client_) {
     std::string content("");
     for (size_t i = 0; i < TCP_RETRY_NUM; ++i) {
       auto ret = tcp_client_->getLidarCalibration(content);
@@ -139,6 +139,7 @@ bool PandarCloud::setupCalibration()
       return false;
     }
   }
+  return false;
 }
 
 void PandarCloud::onProcessScan(const pandar_msgs::PandarScan::ConstPtr& scan_msg)
