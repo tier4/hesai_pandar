@@ -16,9 +16,13 @@ public:
   PacketType getPacket(pandar_msgs::PandarPacket* pkt) override;
 
 private:
+  // void on_receive();
+  void checkDeadline();
+
   boost::asio::io_service io_service_;
-  udp::socket lidar_socket_;
-  udp::socket gps_socket_;
+  std::unique_ptr<udp::socket> lidar_socket_;
+  std::unique_ptr<udp::socket> gps_socket_;
+  std::unique_ptr<boost::asio::deadline_timer> deadline_;
 
   boost::asio::ip::address device_ip_;
   int timeout_;

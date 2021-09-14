@@ -9,7 +9,6 @@ public:
   enum class PacketType : int {
     LIDAR = 0,
     GPS = 1,
-    TIMEOUT = 2,
     ERROR = -1
   };
   virtual ~Input(){};
