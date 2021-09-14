@@ -22,22 +22,6 @@ int main()
     std::cout << calib << std::endl;
   }
 
-  //get status
-  pandar_api::LidarStatus status;
-  code = client.getLidarStatus(status);
-  if(code == pandar_api::TCPClient::ReturnCode::SUCCESS){
-    printf("uptime: %d\n", status.uptime);
-    printf("motor_speed: %d\n", status.motor_speed);
-    for(auto t:status.temp){
-      printf(" temp: %d\n",t);
-    }
-    printf("gps_pps_lock: %d\n", status.gps_pps_lock);
-    printf("gps_gprmc_status: %d\n", status.gps_gprmc_status);
-    printf("startup_times: %d\n", status.startup_times);
-    printf("total_operation_time: %d\n", status.total_operation_time);
-    printf("ptp_clock_status: %d\n", status.ptp_clock_status);
-  }
-
   //get info
   pandar_api::InventoryInfo info;
   code = client.getInventoryInfo(info);
@@ -55,9 +39,24 @@ int main()
     std::cout << "num_of_lines: " << (int)info.num_of_lines << std::endl;
   }
 
+  //get status
+  pandar_api::LidarStatus status;
+  code = client.getLidarStatus(status);
+  if(code == pandar_api::TCPClient::ReturnCode::SUCCESS){
+    printf("uptime: %d\n", status.uptime);
+    printf("motor_speed: %d\n", status.motor_speed);
+    for(auto t:status.temp){
+      printf(" temp: %d\n",t);
+    }
+    printf("gps_pps_lock: %d\n", status.gps_pps_lock);
+    printf("gps_gprmc_status: %d\n", status.gps_gprmc_status);
+    printf("startup_times: %d\n", status.startup_times);
+    printf("total_operation_time: %d\n", status.total_operation_time);
+    printf("ptp_clock_status: %d\n", status.ptp_clock_status);
+  }
   
-  pandar_api::PTPDiag diag;
-  code = client.getPTPDiagnostics(diag);
+  // pandar_api::PTPDiag diag;
+  // code = client.getPTPDiagnostics(diag);
 
   printf("finished!\n");
   return 0;
