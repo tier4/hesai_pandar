@@ -21,7 +21,7 @@
 
 PandarMonitor::PandarMonitor()
 {
-  pnh_.param<double>("timeout", timeout_, 0.5);
+  pnh_.param<double>("timeout", timeout_, 1.0);
   pnh_.param<std::string>("ip_address", ip_address_, "192.168.1.201");
   pnh_.param<float>("temp_cold_warn", temp_cold_warn_, -5.0);
   pnh_.param<float>("temp_cold_error", temp_cold_error_, -10.0);
@@ -34,7 +34,7 @@ PandarMonitor::PandarMonitor()
   updater_.add("pandar_temperature", this, &PandarMonitor::checkTemperature);
   updater_.add("pandar_ptp", this, &PandarMonitor::checkPTP);
 
-  client_ = std::make_unique<pandar_api::TCPClient>(ip_address_);
+  client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000););
 
   updater_.setHardwareID("pandar");
 

@@ -28,7 +28,8 @@ TCPClient::TCPClient(const std::string& device_ip, int32_t timeout)
   : io_service_(),
     socket_(io_service_),
     timer_(io_service_),
-    return_code_(ReturnCode::SUCCESS)
+    return_code_(ReturnCode::SUCCESS),
+    timeout_(timeout)
 {
   device_ip_ = boost::asio::ip::address::from_string(device_ip);
 }
@@ -197,7 +198,7 @@ void TCPClient::connect()
     boost::asio::ip::tcp::endpoint(device_ip_, API_PORT),
     boost::bind(&TCPClient::on_connect, this, boost::asio::placeholders::error));
 
-  timer_.expires_from_now(std::chrono::milliseconds(100));
+  timer_.expires_from_now(std::chrono::milliseconds(timeout_));
   timer_.async_wait(boost::bind(&TCPClient::on_timer, this, boost::placeholders::_1));
   io_service_.run();
 }

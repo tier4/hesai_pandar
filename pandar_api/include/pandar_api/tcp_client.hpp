@@ -43,7 +43,7 @@ struct PTPDiag
 class TCPClient
 {
 public:
-  TCPClient(const std::string& device_ip, int32_t timeout=100/*usec*/);
+  TCPClient(const std::string& device_ip, int32_t timeout=1000/*msec*/);
 
   enum class ReturnCode : uint8_t
   {
@@ -151,6 +151,7 @@ private:
   std::vector<uint8_t> payload_;
   std::vector<uint8_t> buffer_;
   ReturnCode return_code_;
+  int32_t timeout_;
 
   void connect();
   void on_connect(const boost::system::error_code& error);
