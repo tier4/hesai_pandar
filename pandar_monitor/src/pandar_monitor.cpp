@@ -15,7 +15,7 @@
  */
 
 
-#include <pandar_monitor/pandar_monitor.h>
+#include "pandar_monitor/pandar_monitor.hpp"
 #include <boost/algorithm/string/join.hpp>
 #include <fmt/format.h>
 
@@ -34,7 +34,7 @@ PandarMonitor::PandarMonitor()
   updater_.add("pandar_temperature", this, &PandarMonitor::checkTemperature);
   updater_.add("pandar_ptp", this, &PandarMonitor::checkPTP);
 
-  client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000););
+  client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
 
   updater_.setHardwareID("pandar");
 

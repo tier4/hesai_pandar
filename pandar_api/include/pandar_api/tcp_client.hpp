@@ -2,6 +2,7 @@
 
 #include <string>
 #include <boost/asio.hpp>
+#include <boost/asio/steady_timer.hpp>
 
 namespace pandar_api
 {
