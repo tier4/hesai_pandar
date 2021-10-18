@@ -13,17 +13,21 @@ namespace pandar_pointcloud
 {
 namespace pandar40
 {
-Pandar40Decoder::Pandar40Decoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
-: logger_(node.get_logger()), clock_(node.get_clock())
+Pandar40Decoder::Pandar40Decoder(rclcpp::Node &node, Calibration &calibration, double scan_phase,
+                                 const std::vector<double> &angle_range,
+                                 const std::vector<double> &distance_range,
+                                 double dual_return_distance_threshold, ReturnMode return_mode)
+    : logger_(node.get_logger()), clock_(node.get_clock())
 {
-  firing_order_ = { 7,  19, 14, 26, 6,  18, 4,  32, 36, 0, 10, 22, 17, 29, 9,  21, 5,  33, 37, 1,
-                    13, 25, 20, 30, 12, 8,  24, 34, 38, 2, 16, 28, 23, 31, 15, 11, 27, 35, 39, 3 };
+  firing_order_ = {7, 19, 14, 26, 6, 18, 4, 32, 36, 0, 10, 22, 17, 29, 9, 21, 5, 33, 37, 1,
+                   13, 25, 20, 30, 12, 8, 24, 34, 38, 2, 16, 28, 23, 31, 15, 11, 27, 35, 39, 3};
 
-  firing_offset_ = { 42.22, 28.47, 16.04, 3.62,  45.49, 31.74, 47.46, 54.67, 20.62, 33.71, 40.91, 8.19,  20.62, 27.16,
-                     50.73, 8.19,  14.74, 36.98, 45.49, 52.7,  23.89, 31.74, 38.95, 11.47, 18.65, 25.19, 48.76, 6.23,
-                     12.77, 35.01, 21.92, 9.5,   43.52, 29.77, 17.35, 4.92,  42.22, 28.47, 16.04, 3.62 };
+  firing_offset_ = {42.22, 28.47, 16.04, 3.62, 45.49, 31.74, 47.46, 54.67, 20.62, 33.71, 40.91, 8.19, 20.62, 27.16,
+                    50.73, 8.19, 14.74, 36.98, 45.49, 52.7, 23.89, 31.74, 38.95, 11.47, 18.65, 25.19, 48.76, 6.23,
+                    12.77, 35.01, 21.92, 9.5, 43.52, 29.77, 17.35, 4.92, 42.22, 28.47, 16.04, 3.62};
 
-  for (size_t block = 0; block < BLOCKS_PER_PACKET; ++block) {
+  for (size_t block = 0; block < BLOCKS_PER_PACKET; ++block)
+  {
     block_offset_single_[block] = 55.56f * (BLOCKS_PER_PACKET - block - 1) + 28.58f;
     block_offset_dual_[block] = 55.56f * ((BLOCKS_PER_PACKET - block - 1) / 2) + 28.58f;
   }
@@ -32,21 +36,33 @@ Pandar40Decoder::Pandar40Decoder(rclcpp::Node & node, Calibration& calibration, 
   // if(calibration.elev_angle_map.size() != num_lasers_){
   //   // calibration data is not valid!
   // }
-  for (size_t laser = 0; laser < LASER_COUNT; ++laser) {
+  for (size_t laser = 0; laser < LASER_COUNT; ++laser)
+  {
     elev_angle_[laser] = calibration.elev_angle_map[laser];
     azimuth_offset_[laser] = calibration.azimuth_offset_map[laser];
   }
 
-  scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
+  scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0);
+  angle_range_ = {static_cast<uint16_t>(angle_range_[0] * 100.0), static_cast<uint16_t>(angle_range_[1] * 100.0)};
+  distance_range_ = distance_range;
   return_mode_ = return_mode;
   dual_return_distance_threshold_ = dual_return_distance_threshold;
 
+  int max_angle = (angle_range_[1] - angle_range_[0] + 36000) % 36000;
+  int scan_angle = (scan_phase_ - angle_range_[0] + 36000) % 36000;
+  if(max_angle == 0 || scan_phase_ < max_angle){
+    use_overflow_ = true;
+  }else{
+    use_overflow_ = false;
+  }
+
   last_phase_ = 0;
   has_scanned_ = false;
+  reset_scan_ = false;
 
   scan_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
   overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
-}
+  }
 
 bool Pandar40Decoder::hasScanned()
 {
@@ -55,6 +71,7 @@ bool Pandar40Decoder::hasScanned()
 
 PointcloudXYZIRADT Pandar40Decoder::getPointcloud()
 {
+  reset_scan_ = true;
   return scan_pc_;
 }
 
@@ -62,12 +79,6 @@ void Pandar40Decoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
 {
   if (!parsePacket(raw_packet)) {
     return;
-  }
-
-  if (has_scanned_) {
-    scan_pc_ = overflow_pc_;
-    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
-    has_scanned_ = false;
   }
 
   bool dual_return = (packet_.return_mode == DUAL_RETURN);
@@ -81,18 +92,35 @@ void Pandar40Decoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
 
   auto step = dual_return ? 2 : 1;
 
-  for (size_t block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += step) {
-    auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
-    int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
-    if (current_phase > last_phase_ && !has_scanned_) {
-      *scan_pc_ += *block_pc;
+  if(use_overflow_){
+    if (reset_scan_) {
+      scan_pc_ = overflow_pc_;
+      overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+      has_scanned_ = false;
     }
-    else {
-      *overflow_pc_ += *block_pc;
-      has_scanned_ = true;
+    for (size_t block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += step) {
+      auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
+      int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
+      if (current_phase > last_phase_ && !has_scanned_) {
+        *scan_pc_ += *block_pc;
+      }
+      else {
+        *overflow_pc_ += *block_pc;
+        has_scanned_ = true;
+      }
+      last_phase_ = current_phase;
     }
-    last_phase_ = current_phase;
+  }else{
+    for (size_t block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += step) {
+      auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
+      int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - angle_range_[0] + 36000) % 36000;
+      int max_phase = (angle_range_[1] - angle_range_[0] + 36000) % 36000;
+      if (current_phase < max_phase) {
+        *scan_pc_ += *block_pc;
+      }
+    }
   }
+
   return;
 }
 
@@ -154,8 +182,8 @@ PointcloudXYZIRADT Pandar40Decoder::convert_dual(const int block_id)
     const auto& even_unit = even_block.units[unit_id];
     const auto& odd_unit = odd_block.units[unit_id];
 
-    bool even_usable = (even_unit.distance <= 0.1 || even_unit.distance > 200.0) ? 0 : 1;
-    bool odd_usable = (odd_unit.distance <= 0.1 || odd_unit.distance > 200.0) ? 0 : 1;  
+    bool even_usable = (even_unit.distance <= distance_range_[0] || even_unit.distance > distance_range_[1]) ? 0 : 1;
+    bool odd_usable = (odd_unit.distance <= distance_range_[0] || odd_unit.distance > distance_range_[1]) ? 0 : 1;  
 
     if (return_mode_ == ReturnMode::STRONGEST) {
       // Strongest return is in even block when both returns coincide
@@ -222,12 +250,6 @@ bool Pandar40Decoder::parsePacket(const pandar_msgs::msg::PandarPacket& raw_pack
 
       unit.distance = (static_cast<double>(range)) * LASER_RETURN_TO_DISTANCE_RATE;
       unit.intensity = (buf[index + 2] & 0xff);
-
-      // if ((unit.distance == 0x010101 && unit.intensity == 0x0101) ||
-      //     unit.distance > (200 * 1000 / 2 /* 200m -> 2mm */)) {
-      //   unit.distance = 0;
-      //   unit.intensity = 0;
-      // }
 
       index += RAW_MEASURE_SIZE;
     }

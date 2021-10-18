@@ -28,6 +28,9 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
 : Node("pandar_cloud_node", options)
 {
   scan_phase_ = declare_parameter("scan_phase", 0.0);
+  angle_range_ = declare_parameter("angle_range", std::vector<double>{0.0, 360.0});
+  distance_range_ = declare_parameter("distance_range", std::vector<double>{0.1, 200.0});
+
   return_mode_ = declare_parameter("return_mode", "");
   dual_return_distance_threshold_ = declare_parameter("dual_return_distance_threshold", 0.1);
   calibration_path_ = declare_parameter("calibration", "");
@@ -52,7 +55,8 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
       RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to strongest return mode"); 
       selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::STRONGEST;
     }
-    decoder_ = std::make_shared<pandar40::Pandar40Decoder>(*this,calibration_, scan_phase_,
+    decoder_ = std::make_shared<pandar40::Pandar40Decoder>(*this, calibration_, scan_phase_,
+                                                           angle_range_, distance_range_,
                                                            dual_return_distance_threshold_,
                                                            selected_return_mode);
   }
@@ -164,11 +168,7 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
       pointcloud = decoder_->getPointcloud();
       if (pointcloud->points.size() > 0) {
         double first_point_timestamp = pointcloud->points.front().time_stamp;
-        // RCLCPP_WARN(get_logger(), "%f", first_point_timestamp);
-        // pointcloud->header = pcl_conversions::toPCL(scan_msg->header);
-        // pointcloud->header.stamp = pcl_conversions::toPCL(rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count()) - rclcpp::Duration(0.0));
         pointcloud->header.frame_id = scan_msg->header.frame_id;
-        // pointcloud->height = 1;
         if (pandar_points_pub_->get_subscription_count() > 0) {
           const auto pointcloud_raw = convertPointcloud(pointcloud);
           auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();

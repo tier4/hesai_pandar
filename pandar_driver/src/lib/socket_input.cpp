@@ -39,11 +39,14 @@ SocketInput::PacketType SocketInput::getPacket(pandar_msgs::msg::PandarPacket* p
   while (error_code == boost::asio::error::would_block){
     io_service_.run_one();
   }
-
   if(error_code == boost::system::errc::success && remote_endpoint.address() == device_ip_){
     pkt->stamp = clock_->now();
     pkt->size = static_cast<uint32_t>(packet_size);
     return PacketType::LIDAR;
+  }else if(error_code == boost::system::errc::operation_canceled){
+    // timeout & operation canceld
+    // RCLCPP_WARN(logger_,"timeout"); 
+    return PacketType::ERROR;
   }else{
     return PacketType::ERROR;
   }
