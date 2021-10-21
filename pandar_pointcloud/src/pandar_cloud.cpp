@@ -163,26 +163,26 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
   pandar_msgs::msg::PandarPacket pkt;
 
   for (auto& packet : scan_msg->packets) {
+    // RCLCPP_WARN(get_logger(), "-------- unpack ----------");
     decoder_->unpack(packet);
-    if (decoder_->hasScanned()) {
-      pointcloud = decoder_->getPointcloud();
-      if (pointcloud->points.size() > 0) {
-        double first_point_timestamp = pointcloud->points.front().time_stamp;
-        pointcloud->header.frame_id = scan_msg->header.frame_id;
-        if (pandar_points_pub_->get_subscription_count() > 0) {
-          const auto pointcloud_raw = convertPointcloud(pointcloud);
-          auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
-          pcl::toROSMsg(*pointcloud_raw, *ros_pc_msg_ptr);
-          ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
-          pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
-        }
-        {
-          auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
-          pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);
-          ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
-          pandar_points_ex_pub_->publish(std::move(ros_pc_msg_ptr));
-        }
-      }
+  }
+  pointcloud = decoder_->getPointcloud();
+  if (pointcloud->points.size() > 0) {
+    double first_point_timestamp = pointcloud->points.front().time_stamp;
+    pointcloud->header.frame_id = scan_msg->header.frame_id;
+    if (pandar_points_pub_->get_subscription_count() > 0) {
+      const auto pointcloud_raw = convertPointcloud(pointcloud);
+      auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+      pcl::toROSMsg(*pointcloud_raw, *ros_pc_msg_ptr);
+      ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
+      pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
+    }
+    {
+      RCLCPP_WARN(get_logger(),"========== publish %ld points. ==========", pointcloud->points.size()); 
+      auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+      pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);
+      ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
+      pandar_points_ex_pub_->publish(std::move(ros_pc_msg_ptr));
     }
   }
 }

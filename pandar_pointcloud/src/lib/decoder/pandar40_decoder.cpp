@@ -43,15 +43,19 @@ Pandar40Decoder::Pandar40Decoder(rclcpp::Node &node, Calibration &calibration, d
   }
 
   scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0);
-  angle_range_ = {static_cast<uint16_t>(angle_range_[0] * 100.0), static_cast<uint16_t>(angle_range_[1] * 100.0)};
+  angle_range_ = {static_cast<uint16_t>(angle_range[0] * 100.0), static_cast<uint16_t>(angle_range[1] * 100.0)};
   distance_range_ = distance_range;
   return_mode_ = return_mode;
   dual_return_distance_threshold_ = dual_return_distance_threshold;
 
   int max_angle = (angle_range_[1] - angle_range_[0] + 36000) % 36000;
   int scan_angle = (scan_phase_ - angle_range_[0] + 36000) % 36000;
-  if(max_angle == 0 || scan_phase_ < max_angle){
+
+  RCLCPP_WARN(logger_, "scan_angle : %d, angle_range : [%d, %d]", scan_angle, angle_range_[0], angle_range_[1]);
+
+  if(max_angle == 0 || scan_angle < max_angle){
     use_overflow_ = true;
+    RCLCPP_WARN(logger_, "Use overflow");
   }else{
     use_overflow_ = false;
   }
@@ -92,19 +96,29 @@ void Pandar40Decoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
 
   auto step = dual_return ? 2 : 1;
 
-  if(use_overflow_){
-    if (reset_scan_) {
+  if (reset_scan_) {
+    if(use_overflow_){
       scan_pc_ = overflow_pc_;
       overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
       has_scanned_ = false;
+      reset_scan_ = false;
+    }else{
+      scan_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+      reset_scan_ = false;
     }
+    RCLCPP_WARN(logger_, "!!!! reset !!!!");
+  }
+
+  if(use_overflow_){
     for (size_t block_id = 0; block_id < BLOCKS_PER_PACKET; block_id += step) {
       auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
       int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
       if (current_phase > last_phase_ && !has_scanned_) {
+        // RCLCPP_WARN(logger_, "phase : %6d(%6d)", current_phase, last_phase_);
         *scan_pc_ += *block_pc;
       }
       else {
+        // RCLCPP_WARN(logger_, "phase : %6d(%6d) -> overflow", current_phase, last_phase_);
         *overflow_pc_ += *block_pc;
         has_scanned_ = true;
       }
@@ -117,6 +131,9 @@ void Pandar40Decoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
       int max_phase = (angle_range_[1] - angle_range_[0] + 36000) % 36000;
       if (current_phase < max_phase) {
         *scan_pc_ += *block_pc;
+        // RCLCPP_WARN(logger_, "phase : %6d", current_phase);
+      }else{
+        // RCLCPP_WARN(logger_, "phase : %6d -> overflow", current_phase);
       }
     }
   }

@@ -32,7 +32,9 @@ PandarDriverCore::PandarDriverCore(rclcpp::Node *node)
       uint16_t range[2];
       auto code = client_->getLidarRange(range);
       if(code == pandar_api::TCPClient::ReturnCode::SUCCESS){
-        if(scan_phase_ * 100 < range[0] || scan_phase_ * 100 > range[1]){
+        int scan_angle = (static_cast<int>(range[1]) + 36000 - range[0]) % 36000;
+        int max_angle = (static_cast<int>(scan_phase_ * 100) + 36000 - range[0]) % 36000;
+        if(scan_angle < max_angle){
           scan_phase_ = static_cast<double>(range[1] / 100.0);
         }
       }
