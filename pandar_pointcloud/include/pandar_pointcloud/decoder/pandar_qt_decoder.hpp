@@ -29,7 +29,13 @@ public:
     DUAL_ONLY,
   };
 
-  PandarQTDecoder(rclcpp::Node & node, Calibration& calibration, float scan_phase = 0.0f, double dual_return_distance_threshold = 0.1, ReturnMode return_mode = ReturnMode::DUAL);
+  PandarQTDecoder(rclcpp::Node &node,
+                  Calibration &calibration,
+                  double scan_phase,
+                  const std::vector<double> &angle_range,
+                  const std::vector<double> &distance_range,
+                  double dual_return_distance_threshold = 0.1,
+                  ReturnMode return_mode = ReturnMode::DUAL);
   void unpack(const pandar_msgs::msg::PandarPacket& raw_packet) override;
   PointXYZIRADT build_point(int block_id, int unit_id, uint8_t return_type);
   bool hasScanned() override;
@@ -50,6 +56,8 @@ private:
   std::array<float, BLOCK_NUM> block_offset_single_;
   std::array<float, BLOCK_NUM> block_offset_dual_;
 
+  std::vector<int> angle_range_;
+  std::vector<double> distance_range_;
   ReturnMode return_mode_;
   double dual_return_distance_threshold_;
   Packet packet_;
@@ -57,9 +65,11 @@ private:
   PointcloudXYZIRADT scan_pc_;
   PointcloudXYZIRADT overflow_pc_;
 
-  uint16_t scan_phase_;
+  int scan_phase_;
   int last_phase_;
   bool has_scanned_;
+  bool use_overflow_;
+  bool reset_scan_;
 };
 
 }  // namespace pandar_qt

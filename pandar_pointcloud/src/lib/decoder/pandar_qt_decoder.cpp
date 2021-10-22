@@ -13,7 +13,10 @@ namespace pandar_pointcloud
 {
 namespace pandar_qt
 {
-PandarQTDecoder::PandarQTDecoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode)
+PandarQTDecoder::PandarQTDecoder(rclcpp::Node &node, Calibration &calibration, double scan_phase,
+                                 const std::vector<double> &angle_range,
+                                 const std::vector<double> &distance_range,
+                                 double dual_return_distance_threshold, ReturnMode return_mode)
 : logger_(node.get_logger()), clock_(node.get_clock())
 {
   firing_offset_ = {
@@ -38,12 +41,27 @@ PandarQTDecoder::PandarQTDecoder(rclcpp::Node & node, Calibration& calibration, 
     azimuth_offset_[laser] = calibration.azimuth_offset_map[laser];
   }
 
-  scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
+  scan_phase_ = static_cast<int>(scan_phase * 100.0);
+  angle_range_ = {static_cast<int>(angle_range[0] * 100.0), static_cast<int>(angle_range[1] * 100.0)};
+  distance_range_ = distance_range;
   return_mode_ = return_mode;
   dual_return_distance_threshold_ = dual_return_distance_threshold;
 
+  int max_angle = (angle_range_[1] - angle_range_[0] + 36000) % 36000;
+  int scan_angle = (scan_phase_ - angle_range_[0] + 36000) % 36000;
+
+
+  RCLCPP_WARN(logger_, "scan_angle : %d, angle_range : [%d, %d]", scan_angle, angle_range_[0], angle_range_[1]);
+
+  if(max_angle == 0 || scan_angle < max_angle){
+    use_overflow_ = true;
+  }else{
+    use_overflow_ = false;
+  }
+
   last_phase_ = 0;
   has_scanned_ = false;
+  reset_scan_ = false;
 
   scan_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
   overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
@@ -56,6 +74,7 @@ bool PandarQTDecoder::hasScanned()
 
 PointcloudXYZIRADT PandarQTDecoder::getPointcloud()
 {
+  reset_scan_ = true;
   return scan_pc_;
 }
 
@@ -65,11 +84,6 @@ void PandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
     return;
   }
 
-  if (has_scanned_) {
-    scan_pc_ = overflow_pc_;
-    overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
-    has_scanned_ = false;
-  }
 
   bool dual_return = (packet_.return_mode == DUAL_RETURN);
   auto step = dual_return ? 2 : 1;
@@ -81,17 +95,47 @@ void PandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
     }
   }
 
-  for (size_t block_id = 0; block_id < BLOCK_NUM; block_id += step) {
-    auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
-    int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
-    if (current_phase > last_phase_ && !has_scanned_) {
-      *scan_pc_ += *block_pc;
+  if (reset_scan_) {
+    if(use_overflow_){
+      scan_pc_ = overflow_pc_;
+      overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+      has_scanned_ = false;
+      reset_scan_ = false;
+      // RCLCPP_WARN(logger_, "!!!! reset overflow_pc -> scan_pc !!!!");
+    }else{
+      scan_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+      reset_scan_ = false;
+      // RCLCPP_WARN(logger_, "!!!! reset !!!!");
     }
-    else {
-      *overflow_pc_ += *block_pc;
-      has_scanned_ = true;
+  }
+
+  if(use_overflow_){
+    for (size_t block_id = 0; block_id < BLOCK_NUM; block_id += step) {
+      auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
+      int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
+      if (current_phase > last_phase_ && !has_scanned_) {
+        // RCLCPP_WARN(logger_, "phase : %6d[%10ld]", current_phase, scan_pc_->points.size());
+        *scan_pc_ += *block_pc;
+      }
+      else {
+        // RCLCPP_WARN(logger_, "phase : %6d[%10ld] -> overflow", current_phase, scan_pc_->points.size());
+        *overflow_pc_ += *block_pc;
+        has_scanned_ = true;
+      }
+      last_phase_ = current_phase;
     }
-    last_phase_ = current_phase;
+  }else{
+    for (size_t block_id = 0; block_id < BLOCK_NUM; block_id += step) {
+      auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
+      int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - angle_range_[0] + 36000) % 36000;
+      int max_phase = (angle_range_[1] - angle_range_[0] + 36000) % 36000;
+      if (current_phase < max_phase) {
+        // RCLCPP_WARN(logger_, "phase : %6d", packet_.blocks[block_id].azimuth);
+        *scan_pc_ += *block_pc;
+      }else{
+        // RCLCPP_WARN(logger_, "phase : %6d -> overflow", packet_.blocks[block_id].azimuth);
+      }
+    }
   }
   return;
 }

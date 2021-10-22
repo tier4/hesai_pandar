@@ -73,6 +73,7 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
       selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
     }
     decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(*this, calibration_, scan_phase_,
+                                                            angle_range_, distance_range_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }
@@ -178,7 +179,7 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
       pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
     }
     {
-      RCLCPP_WARN(get_logger(),"========== publish %ld points. ==========", pointcloud->points.size()); 
+      // RCLCPP_WARN(get_logger(),"========== publish %ld points. ==========", pointcloud->points.size()); 
       auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
       pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);
       ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
