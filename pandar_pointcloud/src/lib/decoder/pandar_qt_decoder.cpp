@@ -176,7 +176,7 @@ PointcloudXYZIRADT PandarQTDecoder::convert(const int block_id)
   for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
     const auto& unit = block.units[unit_id];
     // skip invalid points
-    if (unit.distance <= 0.1 || unit.distance > 200.0) {
+    if (unit.distance <= distance_range_[0] || unit.distance > distance_range_[1]) {
       continue;
     }
     block_pc->push_back(build_point(block_id, unit_id, (packet_.return_mode == FIRST_RETURN) ? ReturnType::SINGLE_FIRST : ReturnType::SINGLE_LAST));
@@ -203,8 +203,8 @@ PointcloudXYZIRADT PandarQTDecoder::convert_dual(const int block_id)
     const auto& even_unit = even_block.units[unit_id];
     const auto& odd_unit = odd_block.units[unit_id];
 
-    bool even_usable = (even_unit.distance <= 0.1 || even_unit.distance > 200.0) ? 0 : 1;
-    bool odd_usable = (odd_unit.distance <= 0.1 || odd_unit.distance > 200.0) ? 0 : 1;  
+    bool even_usable = (even_unit.distance <= distance_range_[0] || even_unit.distance > distance_range_[1]) ? 0 : 1;
+    bool odd_usable = (odd_unit.distance <= distance_range_[0] || odd_unit.distance > distance_range_[1]) ? 0 : 1;
 
     if (return_mode_ == ReturnMode::FIRST && even_usable) {
       // First return is in even block
