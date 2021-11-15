@@ -95,7 +95,7 @@ void Pandar40Decoder::unpack(const pandar_msgs::PandarPacket& raw_packet)
   return;
 }
 
-PointXYZIRADT Pandar40Decoder::build_point(int block_id, int unit_id, int8_t return_type)
+PointXYZIRADT Pandar40Decoder::build_point(int block_id, int unit_id, uint8_t return_type)
 {
   const auto& block = packet_.blocks[block_id];
   const auto& unit = block.units[unit_id];
