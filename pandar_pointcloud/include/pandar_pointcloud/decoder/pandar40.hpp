@@ -27,6 +27,9 @@ constexpr uint32_t STRONGEST_RETURN = 0x37;
 constexpr uint32_t LAST_RETURN = 0x38;
 constexpr uint32_t DUAL_RETURN = 0x39;
 
+constexpr uint16_t MAX_AZIMUTH = 36000;
+constexpr double AZIMUTH_RESOLUTION = 0.01; 
+
 struct Unit
 {
   uint8_t intensity;
