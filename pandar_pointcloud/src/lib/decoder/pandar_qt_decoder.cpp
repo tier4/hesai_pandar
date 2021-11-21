@@ -165,7 +165,7 @@ PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, uint8_t re
   const double xyDistance = unit.distance * elev_cos_table_[unit_id];
   point.x = xyDistance * azim_sin_table_[azimuth_index];
   point.y = xyDistance * azim_cos_table_[azimuth_index];
-  point.z = unit.distance * elev_cos_table_[unit_id];
+  point.z = unit.distance * elev_sin_table_[unit_id];
 
 
   point.intensity = unit.intensity;
