@@ -37,6 +37,9 @@ constexpr uint32_t FIRST_RETURN = 0x33;
 constexpr uint32_t LAST_RETURN = 0x38;
 constexpr uint32_t DUAL_RETURN = 0x3B;
 
+constexpr uint16_t MAX_AZIMUTH = 36000;
+constexpr double AZIMUTH_RESOLUTION = 0.01; 
+
 struct Header
 {
   uint16_t sob;            // 0xFFEE 2bytes

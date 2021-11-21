@@ -36,9 +36,21 @@ PandarQTDecoder::PandarQTDecoder(rclcpp::Node &node, Calibration &calibration, d
   // if(calibration.elev_angle_map.size() != num_lasers_){
   //   // calibration data is not valid!
   // }
+
   for (size_t laser = 0; laser < UNIT_NUM; ++laser) {
-    elev_angle_[laser] = calibration.elev_angle_map[laser];
-    azimuth_offset_[laser] = calibration.azimuth_offset_map[laser];
+    azimuth_offset_[laser] = static_cast<int32_t>(std::round(calibration.azimuth_offset_map[laser] * 100.0));
+    // elev_angle_[laser] = calibration.elev_angle_map[laser];
+    double elev_angle = deg2rad(calibration.elev_angle_map[laser]);
+    elev_sin_table_.push_back(std::sin(elev_angle));
+    elev_cos_table_.push_back(std::cos(elev_angle));
+  }
+
+  azim_cos_table_.resize(MAX_AZIMUTH, 0.0);
+  azim_sin_table_.resize(MAX_AZIMUTH, 0.0);
+  for (size_t azimuth_idx = 0; azimuth_idx < MAX_AZIMUTH; ++azimuth_idx) {
+    double azimuth = deg2rad(AZIMUTH_RESOLUTION * azimuth_idx);
+    azim_sin_table_[azimuth_idx] = std::sin(azimuth);
+    azim_cos_table_[azimuth_idx] = std::cos(azimuth);
   }
 
   scan_phase_ = static_cast<int>(scan_phase * 100.0);
@@ -148,13 +160,13 @@ PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, uint8_t re
   bool dual_return = (packet_.return_mode == DUAL_RETURN);
   PointXYZIRADT point;
 
-  double xyDistance = unit.distance * cosf(deg2rad(elev_angle_[unit_id]));
+  // double xyDistance = unit.distance * cosf(deg2rad(elev_angle_[unit_id]));
+  const auto azimuth_index = (block.azimuth + azimuth_offset_[unit_id] + MAX_AZIMUTH) % MAX_AZIMUTH;
+  const double xyDistance = unit.distance * elev_cos_table_[unit_id];
+  point.x = xyDistance * azim_sin_table_[azimuth_index];
+  point.y = xyDistance * azim_cos_table_[azimuth_index];
+  point.z = unit.distance * elev_cos_table_[unit_id];
 
-  point.x = static_cast<float>(
-      xyDistance * sinf(deg2rad(azimuth_offset_[unit_id] + (static_cast<double>(block.azimuth)) / 100.0)));
-  point.y = static_cast<float>(
-      xyDistance * cosf(deg2rad(azimuth_offset_[unit_id] + (static_cast<double>(block.azimuth)) / 100.0)));
-  point.z = static_cast<float>(unit.distance * sinf(deg2rad(elev_angle_[unit_id])));
 
   point.intensity = unit.intensity;
   point.distance = unit.distance;
