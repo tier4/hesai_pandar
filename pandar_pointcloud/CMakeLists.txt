@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 3.5)
 project(pandar_pointcloud)
 
 if(NOT CMAKE_CXX_STANDARD)
-  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_STANDARD 17)
   set(CMAKE_CXX_STANDARD_REQUIRED ON)
   set(CMAKE_CXX_EXTENSIONS OFF)
 endif()
@@ -25,8 +25,6 @@ include_directories(
 ament_auto_add_library(pandar_cloud SHARED
   src/pandar_cloud.cpp
   src/lib/calibration.cpp
-  src/lib/tcp_command_client.cpp
-  src/lib/tcp_util.cpp
   src/lib/decoder/pandar40_decoder.cpp
   src/lib/decoder/pandar_qt_decoder.cpp
   src/lib/decoder/pandar_xt_decoder.cpp

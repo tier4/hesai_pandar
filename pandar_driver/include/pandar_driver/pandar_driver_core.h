@@ -2,7 +2,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <pandar_msgs/msg/pandar_scan.hpp>
-
+#include <pandar_api/tcp_client.hpp>
 namespace pandar_driver
 {
 class Input;
@@ -28,6 +28,7 @@ private:
 
   rclcpp::Publisher<pandar_msgs::msg::PandarScan>::SharedPtr pandar_packet_pub_;
   std::shared_ptr<Input> input_;
+  std::shared_ptr<pandar_api::TCPClient> client_;
 
   std::function<bool(size_t)> is_valid_packet_;
 };
