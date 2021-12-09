@@ -39,7 +39,6 @@ PandarQTDecoder::PandarQTDecoder(rclcpp::Node &node, Calibration &calibration, d
 
   for (size_t laser = 0; laser < UNIT_NUM; ++laser) {
     azimuth_offset_[laser] = static_cast<int32_t>(std::round(calibration.azimuth_offset_map[laser] * 100.0));
-    // elev_angle_[laser] = calibration.elev_angle_map[laser];
     double elev_angle = deg2rad(calibration.elev_angle_map[laser]);
     elev_sin_table_.push_back(std::sin(elev_angle));
     elev_cos_table_.push_back(std::cos(elev_angle));
@@ -113,11 +112,9 @@ void PandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
       overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
       has_scanned_ = false;
       reset_scan_ = false;
-      // RCLCPP_WARN(logger_, "!!!! reset overflow_pc -> scan_pc !!!!");
     }else{
       scan_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
       reset_scan_ = false;
-      // RCLCPP_WARN(logger_, "!!!! reset !!!!");
     }
   }
 
@@ -126,11 +123,9 @@ void PandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
       auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
       int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
       if (current_phase > last_phase_ && !has_scanned_) {
-        // RCLCPP_WARN(logger_, "phase : %6d[%10ld]", current_phase, scan_pc_->points.size());
         *scan_pc_ += *block_pc;
       }
       else {
-        // RCLCPP_WARN(logger_, "phase : %6d[%10ld] -> overflow", current_phase, scan_pc_->points.size());
         *overflow_pc_ += *block_pc;
         has_scanned_ = true;
       }
@@ -142,10 +137,7 @@ void PandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
       int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - angle_range_[0] + 36000) % 36000;
       int max_phase = (angle_range_[1] - angle_range_[0] + 36000) % 36000;
       if (current_phase < max_phase) {
-        // RCLCPP_WARN(logger_, "phase : %6d", packet_.blocks[block_id].azimuth);
         *scan_pc_ += *block_pc;
-      }else{
-        // RCLCPP_WARN(logger_, "phase : %6d -> overflow", packet_.blocks[block_id].azimuth);
       }
     }
   }
@@ -160,7 +152,6 @@ PointXYZIRADT PandarQTDecoder::build_point(int block_id, int unit_id, uint8_t re
   bool dual_return = (packet_.return_mode == DUAL_RETURN);
   PointXYZIRADT point;
 
-  // double xyDistance = unit.distance * cosf(deg2rad(elev_angle_[unit_id]));
   const auto azimuth_index = (block.azimuth + azimuth_offset_[unit_id] + MAX_AZIMUTH) % MAX_AZIMUTH;
   const double xyDistance = unit.distance * elev_cos_table_[unit_id];
   point.x = xyDistance * azim_sin_table_[azimuth_index];
