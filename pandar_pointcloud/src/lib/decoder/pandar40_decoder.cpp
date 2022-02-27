@@ -159,7 +159,7 @@ PointXYZIRADT Pandar40Decoder::build_point(int block_id, int unit_id, uint8_t re
   point.intensity = unit.intensity;
   point.distance = unit.distance;
   point.ring = unit_id;
-  point.azimuth = block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
+  point.azimuth = azimuth_index;
   point.return_type = return_type;
   point.time_stamp = unix_second + (static_cast<double>(packet_.usec)) / 1000000.0;
 
