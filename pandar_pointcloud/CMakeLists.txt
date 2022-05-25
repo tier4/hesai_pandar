@@ -16,12 +16,6 @@ find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 ament_auto_find_build_dependencies()
 
-include_directories(
-  include
-  ${PCL_INCLUDE_DIRS}
-  ${PCL_COMMON_INCLUDE_DIRS}
-)
-
 ament_auto_add_library(pandar_cloud SHARED
   src/pandar_cloud.cpp
   src/lib/calibration.cpp
@@ -29,6 +23,18 @@ ament_auto_add_library(pandar_cloud SHARED
   src/lib/decoder/pandar_qt_decoder.cpp
   src/lib/decoder/pandar_xt_decoder.cpp
   src/lib/decoder/pandar64_decoder.cpp
+)
+
+target_include_directories(pandar_cloud
+  PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+)
+
+target_include_directories(pandar_cloud
+  SYSTEM PUBLIC
+    ${PCL_INCLUDE_DIRS}
+    ${PCL_COMMON_INCLUDE_DIRS}
 )
 
 
