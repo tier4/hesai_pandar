@@ -1,9 +1,9 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>pandar_driver</name>
+  <name>pandar_api</name>
   <version>0.0.0</version>
   <description>
-    ROS driver for Hesai LiDARSs.
+    TCP API client for Hesai LiDARSs.
   </description>
   <maintainer email="shinnosuke.hirakawa@tier4.jp">hirakawa</maintainer>
   <license>Apache 2</license>
@@ -12,13 +12,4 @@
 
   <depend>roscpp</depend>
   <depend>roslib</depend>
-  <depend>nodelet</depend>
-  <depend>pluginlib</depend>
-  <depend>pandar_msgs</depend>
-  <depend>libpcap</depend>
-  <depend>pandar_api</depend>
-  
-  <export>
-    <nodelet plugin="${prefix}/nodelet_pandar_driver.xml"/>
-  </export>
 </package>

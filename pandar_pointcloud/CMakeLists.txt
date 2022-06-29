@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
   pcl_ros
   sensor_msgs
   pandar_msgs
+  pandar_api
 )
 
 catkin_package(
@@ -19,6 +20,7 @@ catkin_package(
     include
   CATKIN_DEPENDS
     pandar_msgs
+    pandar_api
   LIBRARIES
     pandar_cloud
 )
@@ -32,8 +34,6 @@ include_directories(
 add_library(pandar_cloud
   src/pandar_cloud.cpp
   src/lib/calibration.cpp
-  src/lib/tcp_command_client.cpp
-  src/lib/tcp_util.cpp
   src/lib/decoder/pandar40_decoder.cpp
   src/lib/decoder/pandar_qt_decoder.cpp
   src/lib/decoder/pandar_xt_decoder.cpp

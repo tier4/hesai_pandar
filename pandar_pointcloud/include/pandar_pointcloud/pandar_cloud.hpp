@@ -3,9 +3,11 @@
 #include <ros/ros.h>
 #include <pandar_msgs/PandarScan.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <pandar_api/tcp_client.hpp>
 #include "pandar_pointcloud/calibration.hpp"
 #include "pandar_pointcloud/decoder/packet_decoder.hpp"
-#include "pandar_pointcloud/tcp_command_client.hpp"
+// #include "pandar_pointcloud/tcp_command_client.hpp"
+
 
 #include <string>
 
@@ -34,7 +36,7 @@ private:
   ros::Publisher pandar_points_ex_pub_;
 
   std::shared_ptr<PacketDecoder> decoder_;
-  std::shared_ptr<TcpCommandClient> tcp_client_;
+  std::shared_ptr<pandar_api::TCPClient> tcp_client_;
   Calibration calibration_;
 };
 

@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
   pluginlib
   pandar_msgs
+  pandar_api
 )
 
 catkin_package(
@@ -17,6 +18,7 @@ catkin_package(
     include
   CATKIN_DEPENDS
     pandar_msgs
+    pandar_api
   LIBRARIES
     pandar_input
 )
