@@ -23,10 +23,10 @@ def launch_setup(context, *args, **kwargs):
         package='pandar_pointcloud',
         plugin='pandar_pointcloud::PandarCloud',
         name='pandar_cloud',
-        parameters=[{**create_parameter_dict('scan_phase', 'model', 'return_mode', 'run_mode', 'background', 'device_ip', 'calibration'),
+        parameters=[{**create_parameter_dict('scan_phase', 'start_angle', 'end_angle', 'model', 'return_mode', 'run_mode', 'background', 'device_ip', 'calibration'),
         }],
-        remappings=[('pandar_points', 'pointcloud_raw'),
-                    ('pandar_points_ex', 'pointcloud_raw_ex')],
+        remappings=[('pandar_points', 'filtered_points'),
+                    ('pandar_points_ex', 'filtered_points_ex')],
         extra_arguments=[{
             'use_intra_process_comms': LaunchConfiguration('use_intra_process')
         }],
@@ -71,8 +71,8 @@ def generate_launch_description():
     add_launch_arg('lidar_port', '2368')
     add_launch_arg('gps_port', '10121')
     add_launch_arg('scan_phase', '0.0')
-    add_launch_arg('start_phase', '0.0')
-    add_launch_arg('end_phase', '360.0')
+    add_launch_arg('start_angle', '30.0')
+    add_launch_arg('end_angle', '150.0')
     add_launch_arg('model', 'ExpoNullNull')
     add_launch_arg('run_mode', 'Subtract')
     add_launch_arg('return_mode', 'First')

@@ -30,8 +30,8 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
 : Node("pandar_cloud_node", options)
 {
   scan_phase_ = declare_parameter("scan_phase", 0.0);
-  start_phase_ = declare_parameter("start_phase", 0.0);
-  end_phase_ = declare_parameter("end_phase", 360.0);
+  start_angle_ = declare_parameter("start_angle", 0.0);
+  end_angle_ = declare_parameter("end_angle", 360.0);
   return_mode_ = declare_parameter("return_mode", "");
   dual_return_distance_threshold_ = declare_parameter("dual_return_distance_threshold", 0.1);
   calibration_path_ = declare_parameter("calibration", "");
@@ -101,6 +101,7 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
       selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::NORMAL;
 
     decoder_ = std::make_shared<pandar_qt::ExpoNullNullPandarQTDecoder>(*this, calibration_, scan_phase_,
+                                                            start_angle_, end_angle_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode, selected_run_mode, 
                                                             background_map_path_);

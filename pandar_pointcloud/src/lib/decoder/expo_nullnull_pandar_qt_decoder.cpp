@@ -13,7 +13,7 @@ namespace pandar_pointcloud
 {
 namespace pandar_qt
 {
-ExpoNullNullPandarQTDecoder::ExpoNullNullPandarQTDecoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, double dual_return_distance_threshold, ReturnMode return_mode, RunMode run_mode, std::string background_map_path)
+ExpoNullNullPandarQTDecoder::ExpoNullNullPandarQTDecoder(rclcpp::Node & node, Calibration& calibration, float scan_phase, float min_angle, float max_angle, double dual_return_distance_threshold, ReturnMode return_mode, RunMode run_mode, std::string background_map_path)
 : logger_(node.get_logger()), clock_(node.get_clock())
 {
   firing_offset_ = {
@@ -39,6 +39,8 @@ ExpoNullNullPandarQTDecoder::ExpoNullNullPandarQTDecoder(rclcpp::Node & node, Ca
   }
 
   scan_phase_ = static_cast<uint16_t>(scan_phase * 100.0f);
+  min_angle_ = min_angle;
+  max_angle_ = max_angle;
   return_mode_ = return_mode;
   run_mode_ = run_mode;
   background_map_path_ = background_map_path;
@@ -213,9 +215,15 @@ PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::convert_dual(const int block_id)
     const auto& odd_unit = odd_block.units[unit_id];
 
     bool even_usable;
+    float corrected_azimuth = even_block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
+    if (min_angle_ > max_angle_) {
+      even_usable = (even_unit.distance <= 0.3 || even_unit.distance > 15.0 || (corrected_azimuth < min_angle_ * 100.0f  && corrected_azimuth > max_angle_ * 100.0f)) ? 0 : 1;
+    }
+    else {
+      even_usable = (even_unit.distance <= 0.3 || even_unit.distance > 15.0 || corrected_azimuth < min_angle_ * 100.0f || corrected_azimuth > max_angle_ * 100.0f) ? 0 : 1;
+    }
     if (run_mode_ == RunMode::SUBTRACT) {
       return_mode_ = ReturnMode::FIRST;
-      even_usable = (even_unit.distance <= 1.0 || even_unit.distance > 200.0) ? 0 : 1;
       if (even_usable) {
         uint column = even_block.azimuth/60;
         uint row = (uint)unit_id;
@@ -227,10 +235,7 @@ PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::convert_dual(const int block_id)
           }
         }
       }
-      //RCLCPP_WARN(logger_, "%d, %d, %f, %f", (int)unit_id, even_block.azimuth/60, map_image_.at<float>((int)unit_id, even_block.azimuth/60), even_unit.distance);
     }
-    else
-      even_usable = (even_unit.distance <= 0.1 || even_unit.distance > 200.0) ? 0 : 1;
     
     bool odd_usable = (odd_unit.distance <= 0.1 || odd_unit.distance > 200.0) ? 0 : 1;  
 

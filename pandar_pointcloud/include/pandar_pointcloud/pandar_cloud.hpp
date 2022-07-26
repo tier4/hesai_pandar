@@ -29,9 +29,9 @@ private:
   std::string background_map_path_;
   std::string run_mode_;
   double dual_return_distance_threshold_;
-  double scan_phase_;
-  double start_phase_;
-  double end_phase_;
+  float scan_phase_;
+  float start_angle_;
+  float end_angle_;
 
   rclcpp::Subscription<pandar_msgs::msg::PandarScan>::SharedPtr pandar_packet_sub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pandar_points_pub_;
