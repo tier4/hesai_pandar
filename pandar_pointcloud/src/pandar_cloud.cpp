@@ -3,6 +3,7 @@
 #include "pandar_pointcloud/calibration.hpp"
 #include "pandar_pointcloud/decoder/pandar40_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_qt_decoder.hpp"
+#include "pandar_pointcloud/decoder/expo_nullnull_pandar_qt_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar_xt_decoder.hpp"
 #include "pandar_pointcloud/decoder/pandar64_decoder.hpp"
 
@@ -29,9 +30,13 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
 : Node("pandar_cloud_node", options)
 {
   scan_phase_ = declare_parameter("scan_phase", 0.0);
+  start_phase_ = declare_parameter("start_phase", 0.0);
+  end_phase_ = declare_parameter("end_phase", 360.0);
   return_mode_ = declare_parameter("return_mode", "");
   dual_return_distance_threshold_ = declare_parameter("dual_return_distance_threshold", 0.1);
   calibration_path_ = declare_parameter("calibration", "");
+  background_map_path_ = declare_parameter("background", "");
+  run_mode_ = declare_parameter("run_mode", "");
   model_ = declare_parameter("model", "");
   device_ip_ = declare_parameter("device_ip","");
 
@@ -73,6 +78,34 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }
+
+  else if (model_ == "ExpoNullNull") {
+    pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode selected_return_mode;
+    pandar_qt::ExpoNullNullPandarQTDecoder::RunMode selected_run_mode;
+    if (return_mode_ == "First")
+      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::FIRST;
+    else if (return_mode_ == "Last")
+      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::LAST;
+    else if (return_mode_ == "Dual")
+      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::DUAL;
+    else {
+      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
+      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::DUAL;
+    }
+
+    if (run_mode_ == "Map")
+      selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::MAP;
+    else if (run_mode_ == "Subtract")
+      selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::SUBTRACT;
+    else
+      selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::NORMAL;
+
+    decoder_ = std::make_shared<pandar_qt::ExpoNullNullPandarQTDecoder>(*this, calibration_, scan_phase_,
+                                                            dual_return_distance_threshold_,
+                                                            selected_return_mode, selected_run_mode, 
+                                                            background_map_path_);
+  }
+
   else if (model_ == "PandarXT-32") {
     pandar_xt::PandarXTDecoder::ReturnMode selected_return_mode;
     if (return_mode_ == "First")

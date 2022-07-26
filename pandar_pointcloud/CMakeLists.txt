@@ -14,12 +14,14 @@ find_package(ament_cmake_auto REQUIRED)
 find_package(PCL REQUIRED COMPONENTS common)
 find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
+find_package(OpenCV REQUIRED)
 ament_auto_find_build_dependencies()
 
 include_directories(
   include
   ${PCL_INCLUDE_DIRS}
   ${PCL_COMMON_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
 )
 
 ament_auto_add_library(pandar_cloud SHARED
@@ -31,8 +33,13 @@ ament_auto_add_library(pandar_cloud SHARED
   src/lib/decoder/pandar_qt_decoder.cpp
   src/lib/decoder/pandar_xt_decoder.cpp
   src/lib/decoder/pandar64_decoder.cpp
+  src/lib/decoder/expo_nullnull_pandar_qt_decoder.cpp
 )
 
+target_link_libraries(pandar_cloud
+  ${OpenCV_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
 
 rclcpp_components_register_node(pandar_cloud
   PLUGIN "pandar_pointcloud::PandarCloud"

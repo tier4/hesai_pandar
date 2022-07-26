@@ -23,7 +23,7 @@ def launch_setup(context, *args, **kwargs):
         package='pandar_pointcloud',
         plugin='pandar_pointcloud::PandarCloud',
         name='pandar_cloud',
-        parameters=[{**create_parameter_dict('scan_phase', 'model', 'device_ip', 'calibration'),
+        parameters=[{**create_parameter_dict('scan_phase', 'model', 'return_mode', 'run_mode', 'background', 'device_ip', 'calibration'),
         }],
         remappings=[('pandar_points', 'pointcloud_raw'),
                     ('pandar_points_ex', 'pointcloud_raw_ex')],
@@ -35,7 +35,7 @@ def launch_setup(context, *args, **kwargs):
 
     container = ComposableNodeContainer(
         name='pandar_node_container',
-        namespace='pointcloud_preprocessor',
+        namespace='',
         package='rclcpp_components',
         executable=LaunchConfiguration('container_executable'),
         composable_node_descriptions=nodes,
@@ -65,15 +65,20 @@ def generate_launch_description():
         launch_arguments.append(DeclareLaunchArgument(name, default_value=default_value))
 
 
-    add_launch_arg('launch_driver', 'True')
+    add_launch_arg('launch_driver', 'False')
     add_launch_arg('pcap', '')
     add_launch_arg('device_ip', '192.168.1.201')
-    add_launch_arg('lidar_port', '2321')
+    add_launch_arg('lidar_port', '2368')
     add_launch_arg('gps_port', '10121')
     add_launch_arg('scan_phase', '0.0')
-    add_launch_arg('model', 'Pandar40P')
+    add_launch_arg('start_phase', '0.0')
+    add_launch_arg('end_phase', '360.0')
+    add_launch_arg('model', 'ExpoNullNull')
+    add_launch_arg('run_mode', 'Subtract')
+    add_launch_arg('return_mode', 'First')
+    add_launch_arg('background', '/home/drwnz/Projects/expo_ws/background.exr')
     add_launch_arg('frame_id', 'pandar')
-    add_launch_arg('calibration', '')
+    add_launch_arg('calibration', '/home/drwnz/Projects/expo_ws/src/hesai_pandar/pandar_pointcloud/config/qt.csv')
 
     add_launch_arg('container_name', 'pandar_composable_node_container')
     add_launch_arg('use_multithread', 'False')
