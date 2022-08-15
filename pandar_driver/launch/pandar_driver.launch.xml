@@ -4,7 +4,7 @@
   <arg name="lidar_port"  default="2368"/>
   <arg name="gps_port"  default="10110"/>
   <arg name="scan_phase"  default="0"/>
-  <arg name="model" default="Pandar40P"/>
+  <arg name="model" default="PandarQT"/>
   <arg name="frame_id" default="pandar"/>
 
 

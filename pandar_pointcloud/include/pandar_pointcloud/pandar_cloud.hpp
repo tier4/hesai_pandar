@@ -5,6 +5,7 @@
 #include <sensor_msgs/msg/point_cloud2.hpp>
 #include "pandar_pointcloud/calibration.hpp"
 #include "pandar_pointcloud/decoder/packet_decoder.hpp"
+#include "pandar_pointcloud/decoder/expo_nullnull_pandar_qt_decoder.hpp"
 #include "pandar_pointcloud/tcp_command_client.hpp"
 
 #include <string>
@@ -20,6 +21,7 @@ public:
 private:
   bool setupCalibration();
   void onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr msg);
+  void onProcessExpoScan(const pandar_msgs::msg::PandarScan::SharedPtr msg);
   pcl::PointCloud<PointXYZIR>::Ptr convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
 
   std::string model_;
@@ -36,10 +38,13 @@ private:
   rclcpp::Subscription<pandar_msgs::msg::PandarScan>::SharedPtr pandar_packet_sub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pandar_points_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pandar_points_ex_pub_;
-
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pandar_points_background_pub_;
+  rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pandar_points_objects_pub_;
+  
   std::shared_ptr<PacketDecoder> decoder_;
   std::shared_ptr<TcpCommandClient> tcp_client_;
   Calibration calibration_;
+  std::shared_ptr<pandar_qt::ExpoNullNullPandarQTDecoder> expo_decoder_;
 };
 
 }  // namespace pandar_pointcloud

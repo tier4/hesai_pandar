@@ -25,8 +25,8 @@ def launch_setup(context, *args, **kwargs):
         name='pandar_cloud',
         parameters=[{**create_parameter_dict('scan_phase', 'start_angle', 'end_angle', 'model', 'return_mode', 'run_mode', 'background', 'device_ip', 'calibration'),
         }],
-        remappings=[('pandar_points', 'filtered_points'),
-                    ('pandar_points_ex', 'filtered_points_ex')],
+        remappings=[('pandar_points_objects', 'pointcloud_filter'),
+                    ('pandar_points_background', 'pointcloud_background')],
         extra_arguments=[{
             'use_intra_process_comms': LaunchConfiguration('use_intra_process')
         }],
@@ -65,20 +65,20 @@ def generate_launch_description():
         launch_arguments.append(DeclareLaunchArgument(name, default_value=default_value))
 
 
-    add_launch_arg('launch_driver', 'False')
+    add_launch_arg('launch_driver', 'True')
     add_launch_arg('pcap', '')
     add_launch_arg('device_ip', '192.168.1.201')
     add_launch_arg('lidar_port', '2368')
     add_launch_arg('gps_port', '10121')
     add_launch_arg('scan_phase', '0.0')
-    add_launch_arg('start_angle', '30.0')
-    add_launch_arg('end_angle', '150.0')
-    add_launch_arg('model', 'ExpoNullNull')
+    add_launch_arg('start_angle', '120.0')
+    add_launch_arg('end_angle', '240.0')
+    add_launch_arg('model', 'PandarQT')
     add_launch_arg('run_mode', 'Subtract')
     add_launch_arg('return_mode', 'First')
-    add_launch_arg('background', '/home/drwnz/Projects/expo_ws/background.exr')
+    add_launch_arg('background', '/home/drwnz/Projects/hesai_custom_ws/background.exr')
     add_launch_arg('frame_id', 'pandar')
-    add_launch_arg('calibration', '/home/drwnz/Projects/expo_ws/src/hesai_pandar/pandar_pointcloud/config/qt.csv')
+    add_launch_arg('calibration', '/home/drwnz/Projects/hesai_custom_ws/src/hesai_pandar/pandar_pointcloud/config/qt.csv')
 
     add_launch_arg('container_name', 'pandar_composable_node_container')
     add_launch_arg('use_multithread', 'False')

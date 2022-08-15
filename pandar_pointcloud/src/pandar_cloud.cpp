@@ -62,49 +62,64 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
                                                            dual_return_distance_threshold_,
                                                            selected_return_mode);
   }
+  // else if (model_ == "PandarQT" && run_mode_ == "Normal") {
+  //   pandar_qt::PandarQTDecoder::ReturnMode selected_return_mode;
+  //   if (return_mode_ == "First")
+  //     selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::FIRST;
+  //   else if (return_mode_ == "Last")
+  //     selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::LAST;
+  //   else if (return_mode_ == "Dual")
+  //     selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
+  //   else {
+  //     RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
+  //     selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
+  //   }
+  //   decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(*this, calibration_, scan_phase_,
+  //                                                           dual_return_distance_threshold_,
+  //                                                           selected_return_mode);
+  // }
+
   else if (model_ == "PandarQT") {
-    pandar_qt::PandarQTDecoder::ReturnMode selected_return_mode;
-    if (return_mode_ == "First")
-      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::FIRST;
-    else if (return_mode_ == "Last")
-      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::LAST;
-    else if (return_mode_ == "Dual")
-      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
-    else {
-      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
-      selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
+    if (run_mode_ == "Map" || run_mode_ == "Subtract") {
+      pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode selected_return_mode;
+      pandar_qt::ExpoNullNullPandarQTDecoder::RunMode selected_run_mode;
+      if (return_mode_ == "First")
+        selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::FIRST;
+      else if (return_mode_ == "Last")
+        selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::LAST;
+      else if (return_mode_ == "Dual")
+        selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::DUAL;
+      else {
+        RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
+        selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::DUAL;
+      }
+      if (run_mode_ == "Map")
+        selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::MAP;
+      else
+        selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::SUBTRACT;
+
+      expo_decoder_ = std::make_shared<pandar_qt::ExpoNullNullPandarQTDecoder>(*this, calibration_, scan_phase_,
+                                                    start_angle_, end_angle_,
+                                                    dual_return_distance_threshold_,
+                                                    selected_return_mode, selected_run_mode, 
+                                                    background_map_path_);
     }
-    decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(*this, calibration_, scan_phase_,
-                                                            dual_return_distance_threshold_,
-                                                            selected_return_mode);
-  }
-
-  else if (model_ == "ExpoNullNull") {
-    pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode selected_return_mode;
-    pandar_qt::ExpoNullNullPandarQTDecoder::RunMode selected_run_mode;
-    if (return_mode_ == "First")
-      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::FIRST;
-    else if (return_mode_ == "Last")
-      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::LAST;
-    else if (return_mode_ == "Dual")
-      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::DUAL;
     else {
-      RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
-      selected_return_mode = pandar_qt::ExpoNullNullPandarQTDecoder::ReturnMode::DUAL;
+      pandar_qt::PandarQTDecoder::ReturnMode selected_return_mode;
+      if (return_mode_ == "First")
+        selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::FIRST;
+      else if (return_mode_ == "Last")
+        selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::LAST;
+      else if (return_mode_ == "Dual")
+        selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
+      else {
+        RCLCPP_WARN(get_logger(),"Invalid return mode, defaulting to dual return mode"); 
+        selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
+      }
+      decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(*this, calibration_, scan_phase_,
+                                                              dual_return_distance_threshold_,
+                                                              selected_return_mode);
     }
-
-    if (run_mode_ == "Map")
-      selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::MAP;
-    else if (run_mode_ == "Subtract")
-      selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::SUBTRACT;
-    else
-      selected_run_mode = pandar_qt::ExpoNullNullPandarQTDecoder::RunMode::NORMAL;
-
-    decoder_ = std::make_shared<pandar_qt::ExpoNullNullPandarQTDecoder>(*this, calibration_, scan_phase_,
-                                                            start_angle_, end_angle_,
-                                                            dual_return_distance_threshold_,
-                                                            selected_return_mode, selected_run_mode, 
-                                                            background_map_path_);
   }
 
   else if (model_ == "PandarXT-32") {
@@ -143,16 +158,24 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
   }
   else {
     // TODO : Add other models
-    RCLCPP_WARN(get_logger(), "Invalid model name");
+    RCLCPP_WARN(get_logger(), "Invalid model name: %s, %s", model_.c_str(), run_mode_.c_str());
     return;
   }
 
-  pandar_packet_sub_ =
-    create_subscription<pandar_msgs::msg::PandarScan>(
-    "pandar_packets", rclcpp::SensorDataQoS(),
-    std::bind(&PandarCloud::onProcessScan, this, std::placeholders::_1));
-
-  pandar_points_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("pandar_points", rclcpp::SensorDataQoS());
+  if (model_ == "PandarQT" && run_mode_ != "Normal") {
+    pandar_packet_sub_ =
+      create_subscription<pandar_msgs::msg::PandarScan>(
+      "pandar_packets", rclcpp::SensorDataQoS(),
+      std::bind(&PandarCloud::onProcessExpoScan, this, std::placeholders::_1));
+    pandar_points_background_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("pandar_points_background", rclcpp::SensorDataQoS());
+    pandar_points_objects_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("pandar_points_objects", rclcpp::SensorDataQoS());
+  }
+  else {
+    pandar_packet_sub_ =
+      create_subscription<pandar_msgs::msg::PandarScan>(
+      "pandar_packets", rclcpp::SensorDataQoS(),
+      std::bind(&PandarCloud::onProcessScan, this, std::placeholders::_1));
+  }
   pandar_points_ex_pub_ = create_publisher<sensor_msgs::msg::PointCloud2>("pandar_points_ex", rclcpp::SensorDataQoS());
 }
 
@@ -188,6 +211,56 @@ bool PandarCloud::setupCalibration()
   return false;
 }
 
+void PandarCloud::onProcessExpoScan(const pandar_msgs::msg::PandarScan::SharedPtr scan_msg)
+{
+  PointcloudXYZIRADT pointcloud;
+  pandar_msgs::msg::PandarPacket pkt;
+
+  for (auto& packet : scan_msg->packets) {
+    expo_decoder_->unpack(packet);
+    if (expo_decoder_->hasScanned()) {
+      pointcloud = expo_decoder_->getPointcloud();
+      if (pointcloud->points.size() > 0) {
+        double first_point_timestamp = pointcloud->points.front().time_stamp;
+        pointcloud->header.frame_id = scan_msg->header.frame_id;
+        if (pandar_points_ex_pub_->get_subscription_count() > 0)
+        {
+          auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+          pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);
+          ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
+          pandar_points_ex_pub_->publish(std::move(ros_pc_msg_ptr));
+        }
+      }
+      if (run_mode_ == "Subtract") {
+        PointcloudXYZIRADT background_pointcloud;
+        background_pointcloud = expo_decoder_->getBackgroundPointcloud();
+        if (background_pointcloud->points.size() > 0) {
+          double first_point_timestamp = background_pointcloud->points.front().time_stamp;
+          background_pointcloud->header.frame_id = scan_msg->header.frame_id;
+          if (pandar_points_background_pub_->get_subscription_count() > 0) {
+            auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+            pcl::toROSMsg(*background_pointcloud, *ros_pc_msg_ptr);
+            ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
+            pandar_points_background_pub_->publish(std::move(ros_pc_msg_ptr));
+          }
+        }
+        PointcloudXYZIRADT objects_pointcloud;
+        objects_pointcloud = expo_decoder_->getObjectsPointcloud();
+        if (objects_pointcloud->points.size() > 0) {
+          double first_point_timestamp = objects_pointcloud->points.front().time_stamp;
+          objects_pointcloud->header.frame_id = scan_msg->header.frame_id;
+          if (pandar_points_objects_pub_->get_subscription_count() > 0) {
+            auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+            pcl::toROSMsg(*objects_pointcloud, *ros_pc_msg_ptr);
+            ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
+            pandar_points_objects_pub_->publish(std::move(ros_pc_msg_ptr));
+          }
+        }
+      }
+    }
+  }
+}
+
 void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr scan_msg)
 {
   PointcloudXYZIRADT pointcloud;
@@ -197,20 +270,18 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
     decoder_->unpack(packet);
     if (decoder_->hasScanned()) {
       pointcloud = decoder_->getPointcloud();
-      if (pointcloud->points.size() > 0) {
+      if (pointcloud->points.size() > 0) {        
         double first_point_timestamp = pointcloud->points.front().time_stamp;
-        // RCLCPP_WARN(get_logger(), "%f", first_point_timestamp);
-        // pointcloud->header = pcl_conversions::toPCL(scan_msg->header);
-        // pointcloud->header.stamp = pcl_conversions::toPCL(rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count()) - rclcpp::Duration(0.0));
         pointcloud->header.frame_id = scan_msg->header.frame_id;
-        // pointcloud->height = 1;
-        if (pandar_points_pub_->get_subscription_count() > 0) {
-          const auto pointcloud_raw = convertPointcloud(pointcloud);
-          auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
-          pcl::toROSMsg(*pointcloud_raw, *ros_pc_msg_ptr);
-          ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
-          pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
-        }
+        // if (pandar_points_pub_->get_subscription_count() > 0) {
+        //   RCLCPP_WARN(get_logger(),"Subscriber found");
+        //   const auto pointcloud_raw = convertPointcloud(pointcloud);
+        //   auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+        //   pcl::toROSMsg(*pointcloud_raw, *ros_pc_msg_ptr);
+        //   ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
+        //   pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
+        //   RCLCPP_WARN(get_logger(),"Publish ok");
+        // }
         {
           auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
           pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);

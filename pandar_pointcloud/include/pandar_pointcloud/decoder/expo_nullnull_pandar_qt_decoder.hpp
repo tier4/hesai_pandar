@@ -42,14 +42,16 @@ public:
   PointXYZIRADT build_point(int block_id, int unit_id, uint8_t return_type);
   bool hasScanned() override;
   PointcloudXYZIRADT getPointcloud() override;
+  PointcloudXYZIRADT getBackgroundPointcloud();
+  PointcloudXYZIRADT getObjectsPointcloud();
 
 private:
   rclcpp::Logger logger_;
   rclcpp::Clock::SharedPtr clock_;
   
   bool parsePacket(const pandar_msgs::msg::PandarPacket& raw_packet);
-  PointcloudXYZIRADT convert(const int block_id);
-  PointcloudXYZIRADT convert_dual(const int block_id);
+  void convert(const int block_id, bool overflow);
+  void convert_dual(const int block_id, bool overflow);
 
   std::array<float, pandar_qt::UNIT_NUM> elev_angle_;
   std::array<float, pandar_qt::UNIT_NUM> azimuth_offset_;
@@ -65,6 +67,10 @@ private:
 
   PointcloudXYZIRADT scan_pc_;
   PointcloudXYZIRADT overflow_pc_;
+  PointcloudXYZIRADT background_pc_;
+  PointcloudXYZIRADT objects_pc_;
+  PointcloudXYZIRADT background_overflow_pc_;
+  PointcloudXYZIRADT objects_overflow_pc_;
 
   uint16_t scan_phase_;
   float min_angle_;

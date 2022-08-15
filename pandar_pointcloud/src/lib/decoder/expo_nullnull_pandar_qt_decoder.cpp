@@ -51,6 +51,10 @@ ExpoNullNullPandarQTDecoder::ExpoNullNullPandarQTDecoder(rclcpp::Node & node, Ca
 
   scan_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
   overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+  background_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+  background_overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+  objects_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+  objects_overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
 
   // Map stuff
   scan_counter_ = 0;
@@ -75,6 +79,16 @@ PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::getPointcloud()
   return scan_pc_;
 }
 
+PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::getBackgroundPointcloud()
+{
+  return background_pc_;
+}
+
+PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::getObjectsPointcloud()
+{
+  return objects_pc_;
+}
+
 void ExpoNullNullPandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
 {
   if (!parsePacket(raw_packet)) {
@@ -84,6 +98,12 @@ void ExpoNullNullPandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& r
   if (has_scanned_) {
     scan_pc_ = overflow_pc_;
     overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+
+    background_pc_ = background_overflow_pc_;
+    background_overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
+
+    objects_pc_ = objects_overflow_pc_;
+    objects_overflow_pc_.reset(new pcl::PointCloud<PointXYZIRADT>);
     has_scanned_ = false;
   }
 
@@ -98,13 +118,14 @@ void ExpoNullNullPandarQTDecoder::unpack(const pandar_msgs::msg::PandarPacket& r
   }
 
   for (size_t block_id = 0; block_id < BLOCK_NUM; block_id += step) {
-    auto block_pc = dual_return ? convert_dual(block_id) : convert(block_id);
     int current_phase = (static_cast<int>(packet_.blocks[block_id].azimuth) - scan_phase_ + 36000) % 36000;
     if (current_phase > last_phase_ && !has_scanned_) {
-      *scan_pc_ += *block_pc;
+      dual_return ? convert_dual(block_id, false) : convert(block_id, false);
+      //*scan_pc_ += *block_pc;
     }
     else {
-      *overflow_pc_ += *block_pc;
+      dual_return ? convert_dual(block_id, true) : convert(block_id, true);
+      //*overflow_pc_ += *block_pc;
       has_scanned_ = true;
       scan_counter_ ++;
       if (run_mode_ == RunMode::MAP && scan_counter_ == 40) {
@@ -157,17 +178,24 @@ PointXYZIRADT ExpoNullNullPandarQTDecoder::build_point(int block_id, int unit_id
   return point;
 }
 
-PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::convert(const int block_id)
+void ExpoNullNullPandarQTDecoder::convert(const int block_id, bool overflow)
 {
-  PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
+  //PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
   const auto& block = packet_.blocks[block_id];
 
-  if (run_mode_ == RunMode::SUBTRACT) {
-    for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
-      const auto& unit = block.units[unit_id];
-
-      bool usable = (unit.distance <= 1.0 || unit.distance > 200.0) ? 0 : 1;
+  for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
+    const auto& unit = block.units[unit_id];
+    bool object = true;
+    float corrected_azimuth = block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
+    bool usable = true; //(unit.distance <= 0.2 || unit.distance > 15.0 || (corrected_azimuth < min_angle_ * 100.0f  && corrected_azimuth > max_angle_ * 100.0f)) ? 0 : 1;  
+    if (min_angle_ > max_angle_) {
+      usable = (unit.distance <= 0.2 || unit.distance > 15.0 || (corrected_azimuth < min_angle_ * 100.0f  && corrected_azimuth > max_angle_ * 100.0f)) ? 0 : 1;
+    }
+    else {
+      usable = (unit.distance <= 0.2 || unit.distance > 15.0 || corrected_azimuth < min_angle_ * 100.0f || corrected_azimuth > max_angle_ * 100.0f) ? 0 : 1;
+    }  
+    if (run_mode_ == RunMode::SUBTRACT) {
       if (usable) {
         uint column = block.azimuth/60;
         uint row = (uint)unit_id;
@@ -175,52 +203,57 @@ PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::convert(const int block_id)
         uint end_column = (column == 599) ? column : column + 1;
         for (uint i = start_column; i <= end_column; i++) {
           if (abs(map_image_.at<float>(row, i) - unit.distance) < 0.2) {
-            continue;
+            object = false;
           }
         }
       }
-      block_pc->push_back(build_point(block_id, unit_id, (packet_.return_mode == FIRST_RETURN) ? ReturnType::SINGLE_FIRST : ReturnType::SINGLE_LAST));
     }
-  }
-  else {
-    for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
-      const auto& unit = block.units[unit_id];
-      // skip invalid points
-      if (unit.distance <= 0.1 || unit.distance > 200.0) {
-        continue;
+    if (usable) {
+      PointXYZIRADT new_point;
+      new_point = build_point(block_id, unit_id, (packet_.return_mode == FIRST_RETURN) ? ReturnType::SINGLE_FIRST : ReturnType::SINGLE_LAST);
+      if (overflow) {
+        overflow_pc_->push_back(new_point);
+        if (run_mode_ == RunMode::SUBTRACT) {
+          object ? objects_overflow_pc_->push_back(new_point) : background_overflow_pc_->push_back(new_point);
+        }
       }
-      block_pc->push_back(build_point(block_id, unit_id, (packet_.return_mode == FIRST_RETURN) ? ReturnType::SINGLE_FIRST : ReturnType::SINGLE_LAST));
+      else {
+        scan_pc_->push_back(new_point);
+        if (run_mode_ == RunMode::SUBTRACT) {
+          object ? objects_pc_->push_back(new_point) : background_pc_->push_back(new_point);
+        }
+      }
     }
   }
-  return block_pc;
 }
 
-PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::convert_dual(const int block_id)
+void ExpoNullNullPandarQTDecoder::convert_dual(const int block_id, bool overflow)
 {
   //   Under the Dual Return mode, the ranging data from each firing is stored in two adjacent blocks:
   // · The even number block is the first return
   // · The odd number block is the last return
   // · The Azimuth changes every two blocks
   // · Important note: Hesai datasheet block numbering starts from 0, not 1, so odd/even are reversed here 
-  PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
+  //PointcloudXYZIRADT block_pc(new pcl::PointCloud<PointXYZIRADT>);
 
   int even_block_id = block_id;
-  int odd_block_id = block_id + 1;
+  //int odd_block_id = block_id + 1;
   const auto& even_block = packet_.blocks[even_block_id];
-  const auto& odd_block = packet_.blocks[odd_block_id];
+  //const auto& odd_block = packet_.blocks[odd_block_id];
 
   for (size_t unit_id = 0; unit_id < UNIT_NUM; ++unit_id) {
 
     const auto& even_unit = even_block.units[unit_id];
-    const auto& odd_unit = odd_block.units[unit_id];
+    //const auto& odd_unit = odd_block.units[unit_id];
 
-    bool even_usable;
+    bool even_usable = true;
+    bool object = true;
     float corrected_azimuth = even_block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
     if (min_angle_ > max_angle_) {
-      even_usable = (even_unit.distance <= 0.3 || even_unit.distance > 15.0 || (corrected_azimuth < min_angle_ * 100.0f  && corrected_azimuth > max_angle_ * 100.0f)) ? 0 : 1;
+      even_usable = (even_unit.distance <= 0.2 || even_unit.distance > 15.0 || (corrected_azimuth < min_angle_ * 100.0f  && corrected_azimuth > max_angle_ * 100.0f)) ? 0 : 1;
     }
     else {
-      even_usable = (even_unit.distance <= 0.3 || even_unit.distance > 15.0 || corrected_azimuth < min_angle_ * 100.0f || corrected_azimuth > max_angle_ * 100.0f) ? 0 : 1;
+      even_usable = (even_unit.distance <= 0.2 || even_unit.distance > 15.0 || corrected_azimuth < min_angle_ * 100.0f || corrected_azimuth > max_angle_ * 100.0f) ? 0 : 1;
     }
     if (run_mode_ == RunMode::SUBTRACT) {
       return_mode_ = ReturnMode::FIRST;
@@ -231,38 +264,34 @@ PointcloudXYZIRADT ExpoNullNullPandarQTDecoder::convert_dual(const int block_id)
         uint end_column = (column == 599) ? column : column + 1;
         for (uint i = start_column; i <= end_column; i++) {
           if (abs(map_image_.at<float>(row, i) - even_unit.distance) < 0.2) {
-            even_usable = false;
+            object = false;
           }
         }
       }
     }
-    
-    bool odd_usable = (odd_unit.distance <= 0.1 || odd_unit.distance > 200.0) ? 0 : 1;  
-
-    if (return_mode_ == ReturnMode::FIRST && even_usable) {
-      // First return is in even block
-      block_pc->push_back(build_point(even_block_id, unit_id, ReturnType::SINGLE_FIRST));     
-    }
-    else if (return_mode_ == ReturnMode::LAST && even_usable) {
-      // Last return is in odd block
-      block_pc->push_back(build_point(odd_block_id, unit_id, ReturnType::SINGLE_LAST)); 
-    }
-    else if (return_mode_ == ReturnMode::DUAL) {
-      // If the two returns are too close, only return the last one
-      if ((abs(even_unit.distance - odd_unit.distance) < dual_return_distance_threshold_) && odd_usable) {
-        block_pc->push_back(build_point(odd_block_id, unit_id, ReturnType::DUAL_ONLY));
+    // if ((ReturnMode::FIRST && even_usable) || (return_mode_ == ReturnMode::LAST && odd_usable)) {
+      PointXYZIRADT new_point;
+      if (return_mode_ == ReturnMode::FIRST && even_usable) {
+        // First return is in even block
+        new_point = build_point(even_block_id, unit_id, ReturnType::SINGLE_FIRST);
+      }
+      // else if (return_mode_ == ReturnMode::LAST && odd_usable) {
+      //   new_point = build_point(odd_block_id, unit_id, ReturnType::SINGLE_LAST);
+      // }
+      if (overflow) {
+        overflow_pc_->push_back(new_point);
+        if (run_mode_ == RunMode::SUBTRACT) {
+          object ? objects_overflow_pc_->push_back(new_point) : background_overflow_pc_->push_back(new_point);
+        }
       }
       else {
-        if (even_usable) {
-          block_pc->push_back(build_point(even_block_id, unit_id, ReturnType::DUAL_FIRST));
-        }
-        if (odd_usable) {
-          block_pc->push_back(build_point(odd_block_id, unit_id, ReturnType::DUAL_LAST));
+        scan_pc_->push_back(new_point);
+        if (run_mode_ == RunMode::SUBTRACT) {
+          object ? objects_pc_->push_back(new_point) : background_pc_->push_back(new_point);
         }
       }
-    }
+    // }
   }
-  return block_pc;
 }
 
 bool ExpoNullNullPandarQTDecoder::parsePacket(const pandar_msgs::msg::PandarPacket& raw_packet)
