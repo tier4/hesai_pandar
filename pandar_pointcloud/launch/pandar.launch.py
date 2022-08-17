@@ -1,10 +1,12 @@
 
 import launch
+import os
 from launch.actions import DeclareLaunchArgument, OpaqueFunction, SetLaunchConfiguration
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import EnvironmentVariable, LaunchConfiguration
 from launch_ros.actions import ComposableNodeContainer, LoadComposableNodes
 from launch_ros.descriptions import ComposableNode
+from ament_index_python import get_package_share_directory
 
 import yaml
 
@@ -65,6 +67,7 @@ def generate_launch_description():
         launch_arguments.append(DeclareLaunchArgument(name, default_value=default_value))
 
 
+    package_dir = get_package_share_directory("pandar_pointcloud")
     add_launch_arg('launch_driver', 'True')
     add_launch_arg('pcap', '')
     add_launch_arg('device_ip', '192.168.1.201')
@@ -76,9 +79,9 @@ def generate_launch_description():
     add_launch_arg('model', 'PandarQT')
     add_launch_arg('run_mode', 'Subtract')
     add_launch_arg('return_mode', 'First')
-    add_launch_arg('background', '/home/drwnz/Projects/hesai_custom_ws/background.exr')
+    add_launch_arg('background', os.path.join(package_dir, 'config/background.exr'))
     add_launch_arg('frame_id', 'pandar')
-    add_launch_arg('calibration', '/home/drwnz/Projects/hesai_custom_ws/src/hesai_pandar/pandar_pointcloud/config/qt.csv')
+    add_launch_arg('calibration', os.path.join(package_dir, 'config/qt.csv'))
 
     add_launch_arg('container_name', 'pandar_composable_node_container')
     add_launch_arg('use_multithread', 'False')
