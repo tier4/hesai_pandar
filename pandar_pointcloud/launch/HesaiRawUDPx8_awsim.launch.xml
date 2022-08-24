@@ -1,0 +1,124 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="device_ip" default="192.168.1.201"/>
+  <arg name="return_mode" default="Dual"/>
+  <group>
+  <push-ros-namespace namespace="pandar40P_0"/>
+  <arg name="lidar_port_40P_0"  default="10000"/>
+  <arg name="gps_port_40P_0"  default="10100"/>
+  <arg name="frame_id_40P_0" default="40P_0"/>
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandar40P_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_40P_0)"/>
+    <arg name="gps_port"   value="$(var gps_port_40P_0)"/>
+    <arg name="frame_id"  value="$(var frame_id_40P_0)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="0 -10 -5 0.1305262 0 0 0.9914449 map 40P_0" />
+  </group>
+
+  <group>
+  <push-ros-namespace namespace="pandar40P_1"/>
+  <arg name="lidar_port_40P_1"  default="10001"/>
+  <arg name="gps_port_40P_1"  default="10101"/>
+  <arg name="frame_id_40P_1" default="40P_1"/>
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandar40P_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_40P_1)"/>
+    <arg name="gps_port"   value="$(var gps_port_40P_1)"/>
+    <arg name="frame_id"  value="$(var frame_id_40P_1)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="-10 0 0 0 0.1305262 0 0.9914449 map 40P_1" />
+  </group>
+
+  <group>
+  <push-ros-namespace namespace="pandar40P_2"/>
+  <arg name="lidar_port_40P_2"  default="10002"/>
+  <arg name="gps_port_40P_2"  default="10102"/>
+  <arg name="frame_id_40P_2" default="40P_2"/>
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandar40P_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_40P_2)"/>
+    <arg name="gps_port"   value="$(var gps_port_40P_2)"/>
+    <arg name="frame_id"  value="$(var frame_id_40P_2)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="10 0 0 0 -0.1305262 0 0.9914449 map 40P_2" />
+  </group>
+
+  <group>
+  <push-ros-namespace namespace="pandar40P_3"/>
+  <arg name="lidar_port_40P_3"  default="10003"/>
+  <arg name="gps_port_40P_3"  default="10103"/>
+  <arg name="frame_id_40P_3" default="40P_3"/>
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandar40P_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_40P_3)"/>
+    <arg name="gps_port"   value="$(var gps_port_40P_3)"/>
+    <arg name="frame_id"  value="$(var frame_id_40P_3)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="0 0 5 -0.1305262 0 0 0.9914449 map 40P_3" />
+  </group>
+
+  <group>
+  <push-ros-namespace namespace="pandarQT_0"/>
+  <arg name="lidar_port_QT_0"  default="10010"/>
+  <arg name="gps_port_QT_0"  default="10110"/>
+  <arg name="frame_id_QT_0" default="QT_0"/>
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandarQT_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_QT_0)"/>
+    <arg name="gps_port"   value="$(var gps_port_QT_0)"/>
+    <arg name="frame_id"  value="$(var frame_id_QT_0)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="0 0 0 0 0 0 1 map QT_0" />
+  </group>
+
+  <group>
+  <push-ros-namespace namespace="pandarQT_1"/>
+  <arg name="lidar_port_QT_1"  default="10011"/>
+  <arg name="gps_port_QT_1"  default="10111"/>
+  <arg name="frame_id_QT_1" default="QT_1"/>
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandarQT_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_QT_1)"/>
+    <arg name="gps_port"   value="$(var gps_port_QT_1)"/>
+    <arg name="frame_id"  value="$(var frame_id_QT_1)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="0 0 2.5 0 -0.1305262 0 0.9914449 map QT_1" />
+  </group>
+
+  <group>
+  <push-ros-namespace namespace="pandarQT_2"/>
+  <arg name="lidar_port_QT_2"  default="10012"/>
+  <arg name="gps_port_QT_2"  default="10112"/>
+  <arg name="frame_id_QT_2" default="QT_2"/>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="0 0 -2.5 0 0.1305262 0 0.9914449 map QT_2" />
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandarQT_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_QT_2)"/>
+    <arg name="gps_port"   value="$(var gps_port_QT_2)"/>
+    <arg name="frame_id"  value="$(var frame_id_QT_2)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  </group>
+
+  <group>
+  <push-ros-namespace namespace="pandarQT_3"/>
+  <arg name="lidar_port_QT_3"  default="10013"/>
+  <arg name="gps_port_QT_3"  default="10113"/>
+  <arg name="frame_id_QT_3" default="QT_3"/>
+  <node pkg="tf2_ros" exec="static_transform_publisher" name="tool_broadcaster" args="0 0 -5 0 0 0 1 map QT_3" />
+  <include file="$(find-pkg-share pandar_pointcloud)/launch/pandarQT_awsim.launch.xml">
+    <arg name="lidar_port" value="$(var lidar_port_QT_3)"/>
+    <arg name="gps_port"   value="$(var gps_port_QT_3)"/>
+    <arg name="frame_id"  value="$(var frame_id_QT_3)"/>
+    <arg name="device_ip" value="$(var device_ip)"/>
+    <arg name="return_mode"  value="$(var return_mode)"/>
+  </include>
+  </group>
+</launch>
