@@ -6,7 +6,7 @@
   <arg name="lidar_port"  default="2368"/>
   <arg name="gps_port"  default="10111"/>
   <arg name="scan_phase"  default="0.0"/>
-  <arg name="return_mode" default="Dual"/>
+  <arg name="return_mode" default="Dual"/> <!-- First / Last / Dual -->
   <arg name="dual_return_distance_threshold" default="0.1"/>
   <arg name="model" default="PandarQT"/>
   <arg name="frame_id" default="pandar"/>
