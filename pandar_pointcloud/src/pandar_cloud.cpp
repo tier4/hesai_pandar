@@ -81,7 +81,7 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
     pandar_xt::PandarXTDecoder::ReturnMode selected_return_mode;
     if (return_mode_ == "First")
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::FIRST;
-    else if (return_mode_ == "STRONGEST")
+    else if (return_mode_ == "Strongest")
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::STRONGEST;
     else if (return_mode_ == "Last")
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::LAST;
