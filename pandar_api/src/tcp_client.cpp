@@ -267,6 +267,7 @@ void TCPClient::on_receive(const boost::system::error_code& error)
             return_code_ = ReturnCode::CONNECTION_FAILED;
           }
           else {
+            return_code_ = (ReturnCode)header_.return_code;
             socket_.close();
             timer_.cancel();
             return;
