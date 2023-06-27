@@ -1,6 +1,7 @@
 <launch>
   <arg name="scan_phase"  default="0"/>
   <arg name="return_mode" default="Dual"/>
+  <arg name="angle_range" default="[0.0, 360.0]"/>
   <arg name="dual_return_distance_threshold" default="0.1"/>
   <arg name="model" default="Pandar40P"/>
   <arg name="device_ip" default="192.168.1.201"/>
@@ -10,6 +11,7 @@
   <node pkg="pandar_pointcloud" exec="pandar_cloud_node" name="pandar_cloud" output="screen" >
     <remap from="pandar_points" to="pointcloud_raw" />
     <remap from="pandar_points_ex" to="pointcloud_raw_ex" />
+    <param name="angle_range" value="$(var angle_range)"/>
     <param name="scan_phase"  type="double" value="$(var scan_phase)"/>
     <param name="model"  type="string" value="$(var model)"/>
     <param name="return_mode"  type="string" value="$(var return_mode)"/>
