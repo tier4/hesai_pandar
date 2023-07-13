@@ -1,0 +1,9 @@
+<launch>
+  <arg name="pandar_monitor_param_file" default="$(find-pkg-share pandar_monitor)/config/pandar_monitor.param.yaml"/>
+  <arg name="ip_address" default="192.168.1.201" />
+
+  <node pkg="pandar_monitor" exec="pandar_monitor_node" name="pandar_monitor" output="log" respawn="true">
+    <param from="$(var pandar_monitor_param_file)" />
+    <param name="ip_address" value="$(var ip_address)" />
+  </node>/>
+</launch>
