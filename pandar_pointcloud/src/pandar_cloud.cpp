@@ -28,9 +28,6 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
 : Node("pandar_cloud_node", options)
 {
   scan_phase_ = declare_parameter("scan_phase", 0.0);
-  angle_range_ = declare_parameter("angle_range", std::vector<double>{0.0, 360.0});
-  distance_range_ = declare_parameter("distance_range", std::vector<double>{0.1, 200.0});
-
   return_mode_ = declare_parameter("return_mode", "");
   dual_return_distance_threshold_ = declare_parameter("dual_return_distance_threshold", 0.1);
   calibration_path_ = declare_parameter("calibration", "");
@@ -56,9 +53,8 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
       selected_return_mode = pandar40::Pandar40Decoder::ReturnMode::STRONGEST;
     }
     decoder_ = std::make_shared<pandar40::Pandar40Decoder>(*this, calibration_, scan_phase_,
-                                                           angle_range_, distance_range_,
-                                                           dual_return_distance_threshold_,
-                                                           selected_return_mode);
+                                                            dual_return_distance_threshold_,
+                                                            selected_return_mode);
   }
   else if (model_ == "PandarQT") {
     pandar_qt::PandarQTDecoder::ReturnMode selected_return_mode;
@@ -73,7 +69,6 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
       selected_return_mode = pandar_qt::PandarQTDecoder::ReturnMode::DUAL;
     }
     decoder_ = std::make_shared<pandar_qt::PandarQTDecoder>(*this, calibration_, scan_phase_,
-                                                            angle_range_, distance_range_,
                                                             dual_return_distance_threshold_,
                                                             selected_return_mode);
   }

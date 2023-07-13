@@ -30,8 +30,6 @@ private:
   std::string calibration_path_;
   double dual_return_distance_threshold_;
   double scan_phase_;
-  std::vector<double> angle_range_;
-  std::vector<double> distance_range_;
 
   rclcpp::Subscription<pandar_msgs::msg::PandarScan>::SharedPtr pandar_packet_sub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pandar_points_pub_;
