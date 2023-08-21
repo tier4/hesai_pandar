@@ -16,6 +16,9 @@ find_package(PCL REQUIRED)
 find_package(pcl_conversions REQUIRED)
 ament_auto_find_build_dependencies()
 
+link_directories(${PCL_LIBRARY_DIRS})
+add_definitions(${PCL_DEFINITIONS})
+
 include_directories(
   include
   ${PCL_INCLUDE_DIRS}
@@ -33,6 +36,7 @@ ament_auto_add_library(pandar_cloud SHARED
   src/lib/decoder/pandar64_decoder.cpp
 )
 
+target_link_libraries(pandar_cloud ${PCL_LIBRARIES})
 
 rclcpp_components_register_node(pandar_cloud
   PLUGIN "pandar_pointcloud::PandarCloud"
