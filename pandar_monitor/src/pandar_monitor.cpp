@@ -36,9 +36,9 @@ PandarMonitor::PandarMonitor(const rclcpp::NodeOptions & options)
   rpm_ratio_warn_ = declare_parameter("rpm_ratio_warn", 0.80);
   rpm_ratio_error_ = declare_parameter("rpm_ratio_error", 0.70);
 
-  updater_.add("pandar_connection", this, &PandarMonitor::checkConnection);
-  updater_.add("pandar_temperature", this, &PandarMonitor::checkTemperature);
-  updater_.add("pandar_ptp", this, &PandarMonitor::checkPTP);
+  updater_.add(std::string(this->get_namespace()) + ": pandar_connection", this, &PandarMonitor::checkConnection);
+  updater_.add(std::string(this->get_namespace()) + ": pandar_temperature", this, &PandarMonitor::checkTemperature);
+  updater_.add(std::string(this->get_namespace()) + ": pandar_ptp", this, &PandarMonitor::checkPTP);
 
   client_ = std::make_unique<pandar_api::TCPClient>(ip_address_, static_cast<int>(timeout_ * 1000));
 

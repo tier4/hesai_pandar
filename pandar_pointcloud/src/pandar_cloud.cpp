@@ -81,7 +81,7 @@ PandarCloud::PandarCloud(const rclcpp::NodeOptions & options)
     pandar_xt::PandarXTDecoder::ReturnMode selected_return_mode;
     if (return_mode_ == "First")
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::FIRST;
-    else if (return_mode_ == "STRONGEST")
+    else if (return_mode_ == "Strongest")
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::STRONGEST;
     else if (return_mode_ == "Last")
       selected_return_mode = pandar_xt::PandarXTDecoder::ReturnMode::LAST;
@@ -164,28 +164,28 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
   pandar_msgs::msg::PandarPacket pkt;
 
   for (auto& packet : scan_msg->packets) {
-    // RCLCPP_WARN(get_logger(), "-------- unpack ----------");
     decoder_->unpack(packet);
   }
   pointcloud = decoder_->getPointcloud();
+  rclcpp::Time pointcloud_stamp;
   if (pointcloud->points.size() > 0) {
     double first_point_timestamp = pointcloud->points.front().time_stamp;
-    pointcloud->header.frame_id = scan_msg->header.frame_id;
-    if (pandar_points_pub_->get_subscription_count() > 0) {
-      const auto pointcloud_raw = convertPointcloud(pointcloud);
-      auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
-      pcl::toROSMsg(*pointcloud_raw, *ros_pc_msg_ptr);
-      ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
-      pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
-    }
-    {
-      // RCLCPP_WARN(get_logger(),"========== publish %ld points. ==========", pointcloud->points.size()); 
-      auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
-      pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);
-      ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
-      pandar_points_ex_pub_->publish(std::move(ros_pc_msg_ptr));
-    }
+    pointcloud_stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
+  } else{
+    pointcloud_stamp = scan_msg->header.stamp;
   }
+  pointcloud->header.frame_id = scan_msg->header.frame_id;
+  if (pandar_points_pub_->get_subscription_count() > 0) {
+    const auto pointcloud_raw = convertPointcloud(pointcloud);
+    auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+    pcl::toROSMsg(*pointcloud_raw, *ros_pc_msg_ptr);
+    ros_pc_msg_ptr->header.stamp = pointcloud_stamp;
+    pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
+  }
+  auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
+  pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);
+  ros_pc_msg_ptr->header.stamp = pointcloud_stamp;
+  pandar_points_ex_pub_->publish(std::move(ros_pc_msg_ptr));
 }
 
 pcl::PointCloud<PointXYZIR>::Ptr
