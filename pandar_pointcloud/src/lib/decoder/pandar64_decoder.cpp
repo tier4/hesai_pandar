@@ -67,6 +67,7 @@ namespace pandar_pointcloud
       if (!parsePacket(raw_packet)) {
         return;
       }
+      unix_second = static_cast<double>(timegm(&packet_.t));
 
       if (has_scanned_) {
         scan_pc_ = overflow_pc_;
@@ -102,7 +103,6 @@ namespace pandar_pointcloud
     {
       const auto& block = packet_.blocks[block_id];
       const auto& unit = block.units[unit_id];
-      auto unix_second = static_cast<double>(timegm(&packet_.t));
       bool dual_return = (packet_.return_mode == DUAL_RETURN);
       PointXYZIRADT point{};
 

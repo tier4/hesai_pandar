@@ -18,5 +18,6 @@ public:
   virtual bool hasScanned() = 0;
 
   virtual PointcloudXYZIRADT getPointcloud() = 0;
+  double unix_second;
 };
 }  // namespace pandar_pointcloud

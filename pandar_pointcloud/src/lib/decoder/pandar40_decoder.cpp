@@ -91,6 +91,7 @@ void Pandar40Decoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
   if (!parsePacket(raw_packet)) {
     return;
   }
+  unix_second = static_cast<double>(timegm(&packet_.t));
 
   bool dual_return = (packet_.return_mode == DUAL_RETURN);
 
@@ -146,7 +147,6 @@ PointXYZIRADT Pandar40Decoder::build_point(int block_id, int unit_id, uint8_t re
 {
   const auto& block = packet_.blocks[block_id];
   const auto& unit = block.units[unit_id];
-  double unix_second = static_cast<double>(timegm(&packet_.t));
   bool dual_return = (packet_.return_mode == DUAL_RETURN);
   PointXYZIRADT point;
 
