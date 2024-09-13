@@ -165,8 +165,10 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
 
   for (auto& packet : scan_msg->packets) {
     decoder_->unpack(packet);
+    if(decoder_->hasScanned()) {
+      pointcloud = decoder_->getPointcloud();
+    }
   }
-  pointcloud = decoder_->getPointcloud();
   rclcpp::Time pointcloud_stamp;
   if (pointcloud->points.size() > 0) {
     double first_point_timestamp = pointcloud->points.front().time_stamp;
