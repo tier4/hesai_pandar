@@ -59,7 +59,7 @@ void PandarXTDecoder::unpack(const pandar_msgs::msg::PandarPacket& raw_packet)
   if (!parsePacket(raw_packet)) {
     return;
   }
-  unix_second = static_cast<double>(timegm(&packet_.t));
+  unix_second_ = static_cast<double>(timegm(&packet_.t));
 
   if (has_scanned_) {
     scan_pc_ = overflow_pc_;
@@ -112,7 +112,7 @@ PointcloudXYZIRADT PandarXTDecoder::convert(const int block_id)
     point.ring = unit_id;
     point.azimuth = block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
 
-    point.time_stamp = unix_second + (static_cast<double>(packet_.usec)) / 1000000.0;
+    point.time_stamp = unix_second_ + (static_cast<double>(packet_.usec)) / 1000000.0;
 
     point.time_stamp += (static_cast<double>(block_offset_single_[block_id] + firing_offset_[unit_id]) / 1000000.0f);
 
@@ -152,7 +152,7 @@ PointcloudXYZIRADT PandarXTDecoder::convert_dual(const int block_id)
       point.ring = unit_id;
       point.azimuth = block.azimuth + round(azimuth_offset_[unit_id] * 100.0f);
 
-      point.time_stamp = unix_second + (static_cast<double>(packet_.usec)) / 1000000.0;
+      point.time_stamp = unix_second_ + (static_cast<double>(packet_.usec)) / 1000000.0;
 
       point.time_stamp += (static_cast<double>(block_offset_dual_[block_id] + firing_offset_[unit_id]) / 1000000.0f);
 

@@ -67,7 +67,7 @@ namespace pandar_pointcloud
       if (!parsePacket(raw_packet)) {
         return;
       }
-      unix_second = static_cast<double>(timegm(&packet_.t));
+      unix_second_ = static_cast<double>(timegm(&packet_.t));
 
       if (has_scanned_) {
         scan_pc_ = overflow_pc_;
@@ -119,7 +119,7 @@ namespace pandar_pointcloud
       point.ring = unit_id;
       point.azimuth = static_cast<float>(block.azimuth) + round(azimuth_offset_[unit_id] * 100.0f);
       point.return_type = return_type;
-      point.time_stamp = unix_second + (static_cast<double>(packet_.usec)) / 1000000.0;
+      point.time_stamp = unix_second_ + (static_cast<double>(packet_.usec)) / 1000000.0;
       point.time_stamp += dual_return ? (static_cast<double>(block_offset_dual_[block_id] + firing_offset_[unit_id]) / 1000000.0f) :
                           (static_cast<double>(block_offset_single_[block_id] + firing_offset_[unit_id]) / 1000000.0f);
 
