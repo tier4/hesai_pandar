@@ -162,12 +162,17 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
 {
   PointcloudXYZIRADT pointcloud;
   pandar_msgs::msg::PandarPacket pkt;
+  bool is_hasScanned = false;
 
   for (auto& packet : scan_msg->packets) {
     decoder_->unpack(packet);
     if(decoder_->hasScanned()) {
       pointcloud = decoder_->getPointcloud();
+      is_hasScanned = true;
     }
+  }
+  if (!is_hasScanned) {
+    pointcloud = decoder_->getPointcloud();
   }
   rclcpp::Time pointcloud_stamp;
   if (pointcloud->points.size() > 0) {
