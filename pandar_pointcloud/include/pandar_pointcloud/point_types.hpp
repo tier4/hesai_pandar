@@ -14,6 +14,16 @@ struct PointXYZIR
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 
+struct PointXYZIRC
+{
+  float x;
+  float y;
+  float z;
+  std::uint8_t intensity;
+  std::uint8_t return_type;
+  std::uint16_t channel;
+};
+
 struct PointXYZIRADT
 {
   PCL_ADD_POINT4D;
@@ -26,6 +36,20 @@ struct PointXYZIRADT
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 
+struct PointXYZIRCAEDT
+{
+  float x;
+  float y;
+  float z;
+  std::uint8_t intensity;
+  std::uint8_t return_type;
+  std::uint16_t channel;
+  float azimuth;
+  float elevation;
+  float distance;
+  std::uint32_t time_stamp;
+};
+
 using PointcloudXYZIRADT = pcl::PointCloud<PointXYZIRADT>::Ptr;
 
 }  // namespace pandar_pointcloud
@@ -34,6 +58,11 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(pandar_pointcloud::PointXYZIR,
                                   (float, x, x)(float, y, y)(float, z, z)(float, intensity, intensity)(std::uint16_t,
                                                                                                        ring, ring))
 
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+  pandar_pointcloud::PointXYZIRC,
+  (float, x, x)(float, y, y)(float, z, z)(std::uint8_t, intensity, intensity)(
+    std::uint8_t, return_type, return_type)(std::uint16_t, channel, channel))
+    
 POINT_CLOUD_REGISTER_POINT_STRUCT(pandar_pointcloud::PointXYZIRADT,
                                   (float, x, x)
                                   (float, y, y)
@@ -44,3 +73,10 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(pandar_pointcloud::PointXYZIRADT,
                                   (float, distance, distance)
                                   (std::uint8_t, return_type, return_type)
                                   (double, time_stamp, time_stamp))
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+  pandar_pointcloud::PointXYZIRCAEDT,
+  (float, x, x)(float, y, y)(float, z, z)(std::uint8_t, intensity, intensity)(
+    std::uint8_t, return_type,
+    return_type)(std::uint16_t, channel, channel)(float, azimuth, azimuth)(
+    float, elevation, elevation)(float, distance, distance)(std::uint32_t, time_stamp, time_stamp))

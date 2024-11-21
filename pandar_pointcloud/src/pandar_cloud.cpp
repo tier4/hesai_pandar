@@ -8,6 +8,7 @@
 
 #include <pcl_conversions/pcl_conversions.h>
 #include <chrono>
+#include <cstdint>
 #include <thread>
 
 namespace
@@ -173,8 +174,9 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
           pandar_points_pub_->publish(std::move(ros_pc_msg_ptr));
         }
         {
+          const auto pointcloud_ex = convertPointcloud3(pointcloud);
           auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
-          pcl::toROSMsg(*pointcloud, *ros_pc_msg_ptr);
+          pcl::toROSMsg(*pointcloud_ex, *ros_pc_msg_ptr);
           ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
           pandar_points_ex_pub_->publish(std::move(ros_pc_msg_ptr));
         }
@@ -203,4 +205,59 @@ PandarCloud::convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& i
   output_pointcloud->width = output_pointcloud->points.size();
   return output_pointcloud;
 }
+
+pcl::PointCloud<PointXYZIRC>::Ptr
+PandarCloud::convertPointcloud2(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud)
+{
+  pcl::PointCloud<PointXYZIRC>::Ptr output_pointcloud(new pcl::PointCloud<PointXYZIRC>);
+  output_pointcloud->reserve(input_pointcloud->points.size());
+  PointXYZIRC point;
+  for (const auto& p : input_pointcloud->points) {
+    point.x = p.x;
+    point.y = p.y;
+    point.z = p.z;
+    point.intensity = static_cast<uint8_t>(255.0);
+    point.return_type = static_cast<uint8_t>(1);
+    point.channel = static_cast<uint16_t>(0);
+    output_pointcloud->points.push_back(point);
+  }
+
+  output_pointcloud->header = input_pointcloud->header;
+  output_pointcloud->height = 1;
+  output_pointcloud->width = output_pointcloud->points.size();
+  return output_pointcloud;
+}
+
+pcl::PointCloud<PointXYZIRCAEDT>::Ptr
+PandarCloud::convertPointcloud3(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud)
+{
+  pcl::PointCloud<PointXYZIRCAEDT>::Ptr output_pointcloud(new pcl::PointCloud<PointXYZIRCAEDT>);
+  output_pointcloud->reserve(input_pointcloud->points.size());
+  PointXYZIRCAEDT point;
+  for (const auto& p : input_pointcloud->points) {
+    point.x = p.x;
+    point.y = p.y;
+    point.z = p.z;
+    point.intensity = static_cast<uint8_t>(255.0);
+    point.return_type = static_cast<uint8_t>(1);
+    point.channel = static_cast<uint16_t>(0);
+
+    float azimuth = std::atan2(p.y, p.x);
+    float distance = std::sqrt(p.x * p.x + p.y * p.y);
+    float elevation = std::atan2(p.z, distance);
+    point.azimuth = azimuth;
+    point.elevation = elevation;
+    point.distance = distance;
+    // convert timestamp, second to nanosecond uint
+    std::uint32_t time_stamp = toChronoNanoSeconds(p.time_stamp).count();
+    point.time_stamp = time_stamp;
+    output_pointcloud->points.push_back(point);
+  }
+
+  output_pointcloud->header = input_pointcloud->header;
+  output_pointcloud->height = 1;
+  output_pointcloud->width = output_pointcloud->points.size();
+  return output_pointcloud;
+}
+
 }  // namespace pandar_pointcloud

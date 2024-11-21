@@ -23,6 +23,8 @@ private:
   bool setupCalibration();
   void onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr msg);
   pcl::PointCloud<PointXYZIR>::Ptr convertPointcloud(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
+  pcl::PointCloud<PointXYZIRC>::Ptr convertPointcloud2(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
+  pcl::PointCloud<PointXYZIRCAEDT>::Ptr convertPointcloud3(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& input_pointcloud);
 
   std::string model_;
   std::string return_mode_;
