@@ -167,7 +167,7 @@ void PandarCloud::onProcessScan(const pandar_msgs::msg::PandarScan::SharedPtr sc
         double first_point_timestamp = pointcloud->points.front().time_stamp;
         pointcloud->header.frame_id = scan_msg->header.frame_id;
         if (pandar_points_pub_->get_subscription_count() > 0) {
-          const auto pointcloud_raw = convertPointcloud(pointcloud);
+          const auto pointcloud_raw = convertPointcloud2(pointcloud);
           auto ros_pc_msg_ptr = std::make_unique<sensor_msgs::msg::PointCloud2>();
           pcl::toROSMsg(*pointcloud_raw, *ros_pc_msg_ptr);
           ros_pc_msg_ptr->header.stamp = rclcpp::Time(toChronoNanoSeconds(first_point_timestamp).count());
@@ -216,9 +216,11 @@ PandarCloud::convertPointcloud2(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& 
     point.x = p.x;
     point.y = p.y;
     point.z = p.z;
-    point.intensity = static_cast<uint8_t>(255.0);
-    point.return_type = static_cast<uint8_t>(1);
-    point.channel = static_cast<uint16_t>(0);
+    point.intensity = static_cast<uint8_t>(p.intensity);
+    uint8_t return_type = p.return_type;
+    if (return_type == 5) return_type = 7;
+    point.return_type = return_type;
+    point.channel = p.ring;
     output_pointcloud->points.push_back(point);
   }
 
@@ -234,23 +236,30 @@ PandarCloud::convertPointcloud3(const pcl::PointCloud<PointXYZIRADT>::ConstPtr& 
   pcl::PointCloud<PointXYZIRCAEDT>::Ptr output_pointcloud(new pcl::PointCloud<PointXYZIRCAEDT>);
   output_pointcloud->reserve(input_pointcloud->points.size());
   PointXYZIRCAEDT point;
+
+  double first_point_timestamp = input_pointcloud->points.front().time_stamp;
+
   for (const auto& p : input_pointcloud->points) {
     point.x = p.x;
     point.y = p.y;
     point.z = p.z;
-    point.intensity = static_cast<uint8_t>(255.0);
-    point.return_type = static_cast<uint8_t>(1);
-    point.channel = static_cast<uint16_t>(0);
+    point.intensity = static_cast<uint8_t>(p.intensity);
 
-    float azimuth = std::atan2(p.y, p.x);
-    float distance = std::sqrt(p.x * p.x + p.y * p.y);
-    float elevation = std::atan2(p.z, distance);
-    point.azimuth = azimuth;
+    uint8_t return_type = p.return_type;
+    if (return_type == 5) return_type = 7;
+    point.return_type = return_type;
+    point.channel = p.ring;
+
+    point.azimuth = p.azimuth;
+    float elevation = std::atan2(p.z, std::sqrt(p.x * p.x + p.y * p.y));
     point.elevation = elevation;
-    point.distance = distance;
+    point.distance = p.distance;
     // convert timestamp, second to nanosecond uint
-    std::uint32_t time_stamp = toChronoNanoSeconds(p.time_stamp).count();
-    point.time_stamp = time_stamp;
+    double time_diff_ns = (p.time_stamp - first_point_timestamp) * 1e9;
+    if (time_diff_ns < 0) {
+      time_diff_ns = 0;
+    }
+    point.time_stamp = static_cast<std::uint32_t>(time_diff_ns);
     output_pointcloud->points.push_back(point);
   }
 
